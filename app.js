@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJ9Nv4Eru4yLor8fclYnV-Ln5bZQ9gwos",
@@ -16,7 +16,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Arayüz Elemanları
 const loginScreen = document.getElementById('login-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
 const welcomeText = document.getElementById('welcome-text');
@@ -24,23 +23,35 @@ const statusBadge = document.getElementById('status-badge');
 const btnGiris = document.getElementById('btn-giris');
 const btnCikis = document.getElementById('btn-cikis');
 
-// DURUM GÜNCELLEME (Giriş mi Çıkış mı Butonu Görünecek?)
+// 1. DURUM GÜNCELLEME (Firebase Index Sorununu Çözen Yeni Mantık)
 const arayuzuGuncelle = async (userEmail) => {
     try {
+        statusBadge.innerText = "Kayıtlar Taranıyor...";
+        
+        // Sadece bu personelin kayıtlarını getir (Sıralama kısıtlaması kaldırıldı)
         const q = query(
             collection(db, "hareketler"),
-            where("personel_tel", "==", userEmail.split('@')[0]),
-            orderBy("tarih_saat", "desc"),
-            limit(1)
+            where("personel_tel", "==", userEmail.split('@')[0])
         );
 
         const querySnapshot = await getDocs(q);
         let sonIslem = "Çıkış"; 
 
         if (!querySnapshot.empty) {
-            sonIslem = querySnapshot.docs[0].data().islem_tipi;
+            // Verileri Javascript ile manuel sıralıyoruz (Firebase engeline takılmamak için)
+            let kayitlar = [];
+            querySnapshot.forEach(doc => kayitlar.push(doc.data()));
+            
+            kayitlar.sort((a, b) => {
+                let zamanA = a.tarih_saat ? a.tarih_saat.toMillis() : 0;
+                let zamanB = b.tarih_saat ? b.tarih_saat.toMillis() : 0;
+                return zamanB - zamanA; // En yeniden eskiye
+            });
+            
+            sonIslem = kayitlar[0].islem_tipi;
         }
 
+        // Arayüzü duruma göre boya ve butonları ayarla
         if (sonIslem === "Giriş") {
             btnGiris.style.display = "none";
             btnCikis.style.display = "block";
@@ -55,13 +66,14 @@ const arayuzuGuncelle = async (userEmail) => {
             statusBadge.style.color = "#991B1B";
         }
     } catch (e) {
-        console.log("Durum alınamadı, varsayılan gösteriliyor.");
+        console.log("Veri çekme hatası:", e);
+        statusBadge.innerText = "Bağlantı Hatası!";
         btnGiris.style.display = "block";
         btnCikis.style.display = "none";
     }
 };
 
-// OTURUM TAKİBİ
+// 2. OTURUM TAKİBİ
 onAuthStateChanged(auth, (user) => {
     if (user) {
         loginScreen.classList.remove('active');
@@ -76,7 +88,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// GİRİŞ YAPMA BUTONU
+// 3. GİRİŞ YAP BUTONU
 document.getElementById('login-btn').addEventListener('click', () => {
     const phone = document.getElementById('phone-input').value;
     const password = document.getElementById('password-input').value;
@@ -92,30 +104,32 @@ document.getElementById('login-btn').addEventListener('click', () => {
         });
 });
 
-// ÇIKIŞ YAPMA (OTURUMU KAPAT)
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-// KAMERA VE QR OKUMA
+// 4. KAMERA VE QR OKUMA (Çift Tıklama/Kilitlenme Korumalı)
 const cameraScreen = document.getElementById('camera-screen');
 const html5QrCode = new Html5Qrcode("reader");
 let aktifIslem = "";
+let islemDevamEdiyor = false; // Çift okumayı engelleyecek kilit
 
 const kamerayiAc = (tip) => {
     aktifIslem = tip;
+    islemDevamEdiyor = false; 
     cameraScreen.style.display = "flex";
     
     html5QrCode.start(
         { facingMode: "environment" }, 
-        { fps: 15, qrbox: 250 }, 
+        { fps: 10, qrbox: 250 }, 
         (text) => {
-            if(text === "ofis_merkez_01") {
-                html5QrCode.stop().then(() => {
-                    cameraScreen.style.display = "none";
-                    veritabaninaYaz(aktifIslem);
-                });
+            // Kod doğruysa ve henüz işlem başlamadıysa çalıştır
+            if(text.trim() === "ofis_merkez_01" && !islemDevamEdiyor) {
+                islemDevamEdiyor = true; // Kilitledik (Birden fazla uyarı vermesin diye)
+                cameraScreen.style.display = "none"; // Arayüzü anında kapat
+                veritabaninaYaz(aktifIslem); // Veriyi gönder
+                html5QrCode.stop().catch(err => console.log("Kamera durdurulamadı", err)); // Arka planda sessizce kamerayı kapat
             }
         }, 
-        () => {}
+        () => {} // Hataları sessiz geç
     ).catch(err => {
         alert("Kamera izni gerekiyor!");
         cameraScreen.style.display = "none";
@@ -132,19 +146,21 @@ const veritabaninaYaz = async (tip) => {
             lokasyon: "Merkez Ofis"
         });
         
-        // BAŞARI BİLDİRİMİ
+        // BAŞARI BİLDİRİMİ EKRANA BASILIR
         alert(`✅ ${tip} İşlemi Başarıyla Tamamlandı!`);
         
-        // Arayüzü Hemen Güncelle
+        // Arayüz yeniden hesaplanıp boyanır (Butonlar değişir)
         arayuzuGuncelle(user.email);
     } catch (e) {
-        alert("Hata: Kayıt yapılamadı!");
+        alert("Hata: Kayıt yapılamadı! İnternet bağlantınızı kontrol edin.");
+        islemDevamEdiyor = false;
     }
 };
 
 btnGiris.addEventListener('click', () => kamerayiAc("Giriş"));
 btnCikis.addEventListener('click', () => kamerayiAc("Çıkış"));
 document.getElementById('cancel-camera-btn').addEventListener('click', () => {
+    islemDevamEdiyor = true;
     html5QrCode.stop().then(() => {
         cameraScreen.style.display = "none";
     }).catch(() => cameraScreen.style.display = "none");
