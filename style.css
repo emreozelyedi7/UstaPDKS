@@ -2,16 +2,30 @@
 body { background-color: #f4f7f9; }
 .screen { display: none; min-height: 100vh; flex-direction: column; }
 .screen.active { display: flex; }
+
+/* Ortak Elemanlar */
 .login-container { margin: auto; background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-input { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
-.btn-primary { width: 100%; padding: 15px; background: #F97316; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+input { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;}
+.btn-primary { width: 100%; padding: 15px; background: #F97316; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;}
 .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+
+/* Personel Ekranı */
 .user-info { padding: 20px; background: white; border-bottom: 1px solid #eee; }
 .action-buttons { padding: 20px; }
 .action-btn { width: 100%; height: 120px; border-radius: 12px; border: none; color: white; font-weight: bold; margin-bottom: 15px; cursor: pointer; }
 .enter-btn { background: #F97316; }
 .exit-btn { background: #1A365D; }
 .btn-content { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 18px; }
-.report-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-.late { border-left-color: #ef4444; } /* Geç kalanlar kırmızı */
-.on-time { border-left-color: #10b981; } /* Zamanında gelenler yeşil */
+
+/* Yönetici Paneli Grid Tasarımı */
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.admin-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: pointer; transition: 0.2s; }
+.admin-card:active { transform: scale(0.95); }
+.admin-card h2 { font-size: 28px; margin-bottom: 5px; }
+.card-title { font-weight: bold; color: #333; font-size: 14px; margin-bottom: 3px; }
+.card-desc { font-size: 11px; color: #888; line-height: 1.2; }
+
+/* Detay Liste Elemanları */
+.list-item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #1A365D; }
+.list-item.late { border-left-color: #ef4444; }
+.list-item.on-time { border-left-color: #10b981; }
