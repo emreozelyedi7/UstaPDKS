@@ -17,9 +17,9 @@
                 <h2><span style="color: #1A365D;">USTA</span> <span style="color: #F97316;">PDKS</span></h2>
             </div>
             <p>Personel Girişi</p>
-            <input type="tel" id="phone-input" placeholder="Telefon Numarası (Örn: 5321234567)" maxlength="10">
+            <input type="tel" id="phone-input" placeholder="Telefon Numarası" maxlength="10">
             <input type="password" id="password-input" placeholder="Şifre">
-            <button id="login-btn" class="btn-primary">Giriş Yap</button>
+            <button id="login-btn" class="btn-primary">Sisteme Giriş</button>
             <p id="login-error" style="color: red; display: none; margin-top: 10px; font-size: 14px;"></p>
         </div>
     </div>
@@ -32,45 +32,46 @@
         </div>
         
         <div class="user-info">
-            <h4 id="welcome-text">Hoş geldin, Yükleniyor...</h4>
+            <h4 id="welcome-text">Hoş geldin...</h4>
             <p id="date-text"></p>
+            <div id="status-badge" style="margin-top: 10px; display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;"></div>
         </div>
 
         <div class="action-buttons">
-            <button id="btn-giris" class="action-btn enter-btn">
+            <button id="btn-giris" class="action-btn enter-btn" style="display: none;">
                 <div class="btn-content">
-                    <span class="btn-title">Giriş Yap</span>
-                    <i class="fas fa-qrcode"></i>
+                    <span class="btn-title">MESAİ BAŞLAT</span>
+                    <i class="fas fa-sign-in-alt"></i>
                 </div>
             </button>
-            <button id="btn-cikis" class="action-btn exit-btn">
+            
+            <button id="btn-cikis" class="action-btn exit-btn" style="display: none;">
                 <div class="btn-content">
-                    <span class="btn-title">Çıkış Yap</span>
-                    <i class="fas fa-qrcode"></i>
+                    <span class="btn-title">MESAİ BİTİR</span>
+                    <i class="fas fa-sign-out-alt"></i>
                 </div>
             </button>
         </div>
 
         <div class="stats-container">
             <div class="stat-card">
-                <h3>0</h3>
-                <p>Bugün Gelenler</p>
+                <h3 id="stat-gecikme">0 dk</h3>
+                <p>Bugünkü Gecikme</p>
             </div>
             <div class="stat-card">
-                <h3>0</h3>
-                <p>Geç Kalanlar</p>
+                <h3 id="stat-mesai">0 sa</h3>
+                <p>Toplam Mesai</p>
             </div>
         </div>
 
-        <button id="logout-btn" class="btn-secondary" style="margin: 20px; width: calc(100% - 40px);">Oturumu Kapat</button>
+        <button id="logout-btn" class="btn-secondary" style="margin: 20px; width: calc(100% - 40px); background: #999;">Oturumu Kapat</button>
     </div>
 
     <div id="camera-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center;">
-        <button id="cancel-camera-btn" style="position: absolute; top: 40px; left: 20px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 8px; font-size: 16px; z-index: 10000; cursor: pointer;">
+        <button id="cancel-camera-btn" style="position: absolute; top: 40px; left: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; z-index: 10000;">
             <i class="fas fa-times"></i> İptal
         </button>
-        <h3 style="color: white; position: absolute; top: 45px; z-index: 9998; text-align: center; width: 100%;">Karekod'u Çerçeveye Hizalayın</h3>
-        <div id="reader" style="width: 100%; max-width: 500px; background: #000;"></div>
+        <div id="reader" style="width: 100%;"></div>
     </div>
 
     <script type="module" src="app.js"></script>
