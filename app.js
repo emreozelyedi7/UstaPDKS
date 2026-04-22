@@ -194,6 +194,12 @@ const cameraScreen = document.getElementById('camera-screen');
 const html5QrCode = new Html5Qrcode("reader");
 let islemDevamEdiyor = false;
 
+// SADECE BU ŞUBELER GEÇERLİ OLACAK (Merkez Ofis İptal)
+const gecerliKarekodlar = {
+    "qr_pendik": "Pendik Şube",
+    "qr_atolye": "Atölye"
+};
+
 const kamerayiAc = (tip) => {
     islemDevamEdiyor = false; 
     cameraScreen.style.display = "flex";
@@ -201,26 +207,29 @@ const kamerayiAc = (tip) => {
         
         let okunanSifre = text.trim();
         
-        // Eğer okunan QR kod bizim listemizde varsa
-        if(qrLokasyonMap[okunanSifre] && !islemDevamEdiyor) {
+        // Eğer okutulan kod listemizde varsa
+        if(gecerliKarekodlar[okunanSifre] && !islemDevamEdiyor) {
             islemDevamEdiyor = true;
             cameraScreen.style.display = "none";
             
-            let algilananSube = qrLokasyonMap[okunanSifre]; // Okunan koda göre şubeyi bul
+            let gercekKonum = gecerliKarekodlar[okunanSifre]; // Merkez Ofis yerine Atölye veya Pendik Şube yazar
             
             addDoc(collection(db, "hareketler"), {
                 personel_tel: auth.currentUser.email.split('@')[0],
                 islem_tipi: tip, 
                 tarih_saat: serverTimestamp(), 
-                lokasyon: algilananSube // Şubeyi veritabanına kaydet
+                lokasyon: gercekKonum 
             }).then(() => { 
-                alert(`✅ ${algilananSube} konumunda ${tip} Başarılı!`); 
+                alert(`✅ ${gercekKonum} - ${tip} İşlemi Başarılı!`); 
                 personelArayuzuGuncelle(auth.currentUser.email.split('@')[0]); 
             });
             html5QrCode.stop().catch(()=>{});
-        } else if (!qrLokasyonMap[okunanSifre] && !islemDevamEdiyor) {
-            alert("Geçersiz QR Kod!");
+            
+        } else if (!gecerliKarekodlar[okunanSifre] && !islemDevamEdiyor) {
+            // Başka bir QR okutulursa uyarı ver
+            alert("Geçersiz QR Kod! Lütfen kendi şubenizin kodunu okutun.");
         }
+
     }, () => {}).catch(() => { alert("Kamera izni verin!"); cameraScreen.style.display = "none"; });
 };
 
