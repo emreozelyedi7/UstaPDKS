@@ -14,40 +14,42 @@
     <div id="login-screen" class="screen active">
         <div class="login-container">
             <div class="logo">
-                <h2><span style="color: #1A365D;">USTA</span> <span style="color: #F97316;">PDKS</span></h2>
+                <h2 style="font-size: 32px;"><span style="color: #1A365D;">USTA</span> <span style="color: #F97316;">PDKS</span></h2>
             </div>
-            <p>Personel Girişi</p>
-            <input type="tel" id="phone-input" placeholder="Telefon Numarası" maxlength="10">
-            <input type="password" id="password-input" placeholder="Şifre">
-            <button id="login-btn" class="btn-primary">Sisteme Giriş</button>
-            <p id="login-error" style="color: red; display: none; margin-top: 10px; font-size: 14px;"></p>
+            <p style="margin-top: 10px; color: #666;">Lütfen giriş bilgilerinizi girin</p>
+            <div style="margin-top: 30px;">
+                <input type="tel" id="phone-input" placeholder="Telefon Numarası" maxlength="10">
+                <input type="password" id="password-input" placeholder="Şifre">
+                <button id="login-btn" class="btn-primary">SİSTEME GİRİŞ</button>
+                <p id="login-error" style="color: red; display: none; margin-top: 15px;"></p>
+            </div>
         </div>
     </div>
 
     <div id="dashboard-screen" class="screen">
         <div class="header">
-            <i class="fas fa-bars"></i>
+            <i class="fas fa-bars" style="font-size: 20px;"></i>
             <h3><span style="color: #1A365D;">USTA</span> <span style="color: #F97316;">PDKS</span></h3>
-            <i class="fas fa-bell"></i>
+            <i class="fas fa-bell" style="font-size: 20px;"></i>
         </div>
         
         <div class="user-info">
-            <h4 id="welcome-text">Hoş geldin...</h4>
-            <p id="date-text"></p>
-            <div id="status-badge" style="margin-top: 10px; display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;"></div>
+            <h4 id="welcome-text" style="font-size: 20px; color: #1A365D;">Yükleniyor...</h4>
+            <p id="date-text" style="color: #666; margin-top: 5px;"></p>
+            <div id="status-badge" style="margin-top: 15px; display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; background: #eee;">Durum Kontrol Ediliyor...</div>
         </div>
 
         <div class="action-buttons">
-            <button id="btn-giris" class="action-btn enter-btn" style="display: none;">
+            <button id="btn-giris" class="action-btn enter-btn">
                 <div class="btn-content">
-                    <span class="btn-title">MESAİ BAŞLAT</span>
+                    <span class="btn-title">GİRİŞ YAP (MESAİ BAŞLAT)</span>
                     <i class="fas fa-sign-in-alt"></i>
                 </div>
             </button>
             
             <button id="btn-cikis" class="action-btn exit-btn" style="display: none;">
                 <div class="btn-content">
-                    <span class="btn-title">MESAİ BİTİR</span>
+                    <span class="btn-title">ÇIKIŞ YAP (MESAİ BİTİR)</span>
                     <i class="fas fa-sign-out-alt"></i>
                 </div>
             </button>
@@ -55,21 +57,21 @@
 
         <div class="stats-container">
             <div class="stat-card">
-                <h3 id="stat-gecikme">0 dk</h3>
-                <p>Bugünkü Gecikme</p>
+                <h3 id="stat-gecikme" style="color: #F97316;">0 dk</h3>
+                <p>Gecikme</p>
             </div>
             <div class="stat-card">
-                <h3 id="stat-mesai">0 sa</h3>
+                <h3 id="stat-mesai" style="color: #1A365D;">0 sa</h3>
                 <p>Toplam Mesai</p>
             </div>
         </div>
 
-        <button id="logout-btn" class="btn-secondary" style="margin: 20px; width: calc(100% - 40px); background: #999;">Oturumu Kapat</button>
+        <button id="logout-btn" class="btn-secondary" style="margin: 25px; width: calc(100% - 50px); background: #555;">Oturumu Kapat</button>
     </div>
 
-    <div id="camera-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center;">
-        <button id="cancel-camera-btn" style="position: absolute; top: 40px; left: 20px; padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 8px; z-index: 10000;">
-            <i class="fas fa-times"></i> İptal
+    <div id="camera-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center;">
+        <button id="cancel-camera-btn" style="position: absolute; top: 40px; left: 20px; padding: 12px 24px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 8px; z-index: 10000; font-weight: bold;">
+            <i class="fas fa-times"></i> İPTAL
         </button>
         <div id="reader" style="width: 100%;"></div>
     </div>
