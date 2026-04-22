@@ -16,27 +16,30 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// YÖNETİCİ NUMARASI BURAYA (Kendi numaranı yaz)
+// YÖNETİCİ NUMARASI BURAYA
 const ADMIN_PHONE = "5324328072"; 
+
+// ŞUBE QR KOD ŞİFRELERİ
+const qrLokasyonMap = {
+    "qr_pendik": "Pendik Şube",
+    "qr_atolye": "Atölye",
+    "ofis_merkez_01": "Merkez Ofis" // Eskisi de çalışmaya devam etsin
+};
 
 // Ekranlar
 const loginScreen = document.getElementById('login-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
 const adminDashboardScreen = document.getElementById('admin-dashboard-screen');
 const detailScreen = document.getElementById('detail-screen');
+const locationFilter = document.getElementById('location-filter');
 
-// YÖNLENDİRİCİ: Kim girdi?
 const ekranYonlendir = (userEmail) => {
     const phone = userEmail.split('@')[0];
-    
-    // YÖNETİCİ Mİ?
     if(phone === ADMIN_PHONE) {
         dashboardScreen.classList.remove('active');
         adminDashboardScreen.classList.add('active');
         adminVerileriniHesapla();
-    } 
-    // PERSONEL Mİ?
-    else {
+    } else {
         adminDashboardScreen.classList.remove('active');
         dashboardScreen.classList.add('active');
         personelArayuzuGuncelle(phone);
@@ -48,48 +51,53 @@ let tumHareketlerCache = [];
 
 const adminVerileriniHesapla = async () => {
     try {
-        const querySnapshot = await getDocs(collection(db, "hareketler"));
-        tumHareketlerCache = [];
-        querySnapshot.forEach(doc => tumHareketlerCache.push(doc.data()));
+        if(tumHareketlerCache.length === 0) {
+            const querySnapshot = await getDocs(collection(db, "hareketler"));
+            querySnapshot.forEach(doc => tumHareketlerCache.push(doc.data()));
+        }
         
-        // Bugünü bul
         const bugun = new Date().toLocaleDateString('tr-TR');
+        const seciliSube = locationFilter.value; // Dropdown'dan seçilen şube
         
         let bugunGelenler = new Set();
         let bugunGecKalanlar = new Set();
 
         tumHareketlerCache.forEach(veri => {
             if(!veri.tarih_saat) return;
+            
+            // FİLTRE: Eğer "Tümü" seçilmediyse ve personelin okuttuğu şube seçilenle uyuşmuyorsa, bu veriyi atla.
+            if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
+
             const tarih = veri.tarih_saat.toDate();
             const gunStr = tarih.toLocaleDateString('tr-TR');
             
             if(gunStr === bugun && veri.islem_tipi === "Giriş") {
                 bugunGelenler.add(veri.personel_tel);
                 
-                // Gecikme kuralı: Saat 09:00'ı geçtiyse (Örn: 09:01)
                 if(tarih.getHours() > 9 || (tarih.getHours() === 9 && tarih.getMinutes() > 0)) {
                     bugunGecKalanlar.add(veri.personel_tel);
                 }
             }
         });
 
-        // Ekrana bas
         document.getElementById('count-gelenler').innerText = bugunGelenler.size;
         document.getElementById('count-geckalanlar').innerText = bugunGecKalanlar.size;
-        // Not: "Gelmeyenler" hesabı için toplam personel sayısını bilmek gerekir, şimdilik statik 0.
 
     } catch (e) {
         console.log("Admin veri çekme hatası", e);
     }
 };
 
-// Kartlara Tıklama Olayı (Detay Sayfası Açma)
+// Açılır menüden farklı bir şube seçildiğinde sayıları hemen güncelle
+locationFilter.addEventListener('change', adminVerileriniHesapla);
+
 window.detayAc = (kategori) => {
     document.getElementById('detail-title').innerText = kategori;
     adminDashboardScreen.classList.remove('active');
     detailScreen.classList.add('active');
     
     const container = document.getElementById('detail-list-container');
+    const seciliSube = locationFilter.value;
     let html = "";
     const bugun = new Date().toLocaleDateString('tr-TR');
 
@@ -98,49 +106,43 @@ window.detayAc = (kategori) => {
         
         tumHareketlerCache.forEach(veri => {
             if(!veri.tarih_saat) return;
+            
+            // FİLTRE KONTROLÜ
+            if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
+
             const tarih = veri.tarih_saat.toDate();
             if(tarih.toLocaleDateString('tr-TR') === bugun && veri.islem_tipi === "Giriş") {
                 
                 let isLate = (tarih.getHours() > 9 || (tarih.getHours() === 9 && tarih.getMinutes() > 0));
-                
-                // Filtreleme
                 if(kategori === "Geç Kalanlar" && !isLate) return;
 
                 const saatStr = tarih.getHours().toString().padStart(2, '0') + ":" + tarih.getMinutes().toString().padStart(2, '0');
+                
                 html += `
                     <div class="list-item ${isLate ? 'late' : 'on-time'}">
-                        <strong>${veri.personel_tel}</strong> <br>
+                        <strong>${veri.personel_tel}</strong> <span style="font-size:11px; color:#888;">(${veri.lokasyon || "Belirtilmedi"})</span><br>
                         <small>Giriş: ${saatStr}</small>
                         <span style="float:right; color: ${isLate ? '#ef4444' : '#10b981'}; font-weight:bold;">${isLate ? 'Geç' : 'Zamanında'}</span>
                     </div>
                 `;
             }
         });
-    } 
-    else if (kategori === "Maaş Kesinti Raporu") {
-        html = `<div style="text-align:center; padding: 20px; color: #666;">
-                  <i class="fas fa-tools" style="font-size: 30px; margin-bottom: 10px;"></i><br>
-                  Kesinti hesaplama modülü yakında eklenecek.
-                </div>`;
-    } 
-    else {
-        html = "<p style='color:#666;'>Bu kategori için veri bulunamadı.</p>";
+    } else if (kategori === "Maaş Kesinti Raporu") {
+        html = `<div style="text-align:center; padding: 20px; color: #666;">Kesinti hesaplama modülü yakında eklenecek.</div>`;
+    } else {
+        html = "<p style='color:#666;'>Gelmediği kesinleşenler gün sonunda belli olur.</p>";
     }
     
-    container.innerHTML = html || "<p>Kayıt yok.</p>";
+    container.innerHTML = html || "<p>Bu filtreye uygun kayıt yok.</p>";
 };
 
-// Detaylardan geri dön
 document.getElementById('back-to-admin-dash').addEventListener('click', () => {
     detailScreen.classList.remove('active');
     adminDashboardScreen.classList.add('active');
 });
-
-// Admin Çıkış
 document.getElementById('admin-logout-btn').addEventListener('click', () => signOut(auth));
 
-
-// ================= PERSONEL BÖLÜMÜ (Önceki Mantık) =================
+// ================= PERSONEL BÖLÜMÜ =================
 const personelArayuzuGuncelle = async (phone) => {
     const q = query(collection(db, "hareketler"), where("personel_tel", "==", phone));
     const querySnapshot = await getDocs(q);
@@ -166,7 +168,6 @@ const personelArayuzuGuncelle = async (phone) => {
     }
 };
 
-// OTURUM YÖNETİMİ
 onAuthStateChanged(auth, (user) => {
     if (user) {
         loginScreen.classList.remove('active');
@@ -186,10 +187,9 @@ document.getElementById('login-btn').addEventListener('click', () => {
     if(!phone || !password) return alert("Bilgileri girin");
     signInWithEmailAndPassword(auth, `${phone}@ustapdks.com`, password).catch(() => alert("Hatalı giriş!"));
 });
-
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-// PERSONEL KAMERA (Sadece Personel kullanır)
+// PERSONEL KAMERA & ŞUBE ALGILAMA
 const cameraScreen = document.getElementById('camera-screen');
 const html5QrCode = new Html5Qrcode("reader");
 let islemDevamEdiyor = false;
@@ -198,17 +198,28 @@ const kamerayiAc = (tip) => {
     islemDevamEdiyor = false; 
     cameraScreen.style.display = "flex";
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        if(text === "ofis_merkez_01" && !islemDevamEdiyor) {
+        
+        let okunanSifre = text.trim();
+        
+        // Eğer okunan QR kod bizim listemizde varsa
+        if(qrLokasyonMap[okunanSifre] && !islemDevamEdiyor) {
             islemDevamEdiyor = true;
             cameraScreen.style.display = "none";
+            
+            let algilananSube = qrLokasyonMap[okunanSifre]; // Okunan koda göre şubeyi bul
+            
             addDoc(collection(db, "hareketler"), {
                 personel_tel: auth.currentUser.email.split('@')[0],
-                islem_tipi: tip, tarih_saat: serverTimestamp(), lokasyon: "Merkez Ofis"
+                islem_tipi: tip, 
+                tarih_saat: serverTimestamp(), 
+                lokasyon: algilananSube // Şubeyi veritabanına kaydet
             }).then(() => { 
-                alert("İşlem Başarılı!"); 
+                alert(`✅ ${algilananSube} konumunda ${tip} Başarılı!`); 
                 personelArayuzuGuncelle(auth.currentUser.email.split('@')[0]); 
             });
             html5QrCode.stop().catch(()=>{});
+        } else if (!qrLokasyonMap[okunanSifre] && !islemDevamEdiyor) {
+            alert("Geçersiz QR Kod!");
         }
     }, () => {}).catch(() => { alert("Kamera izni verin!"); cameraScreen.style.display = "none"; });
 };
