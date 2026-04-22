@@ -7,6 +7,7 @@
     <title>USTA PDKS</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
@@ -62,6 +63,15 @@
         </div>
 
         <button id="logout-btn" class="btn-secondary" style="margin: 20px; width: calc(100% - 40px);">Oturumu Kapat</button>
+    </div>
+
+    <div id="camera-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-camera">&times;</span>
+            <h3 style="margin-bottom: 15px; color: #1A365D;">QR Kodu Okutun</h3>
+            <div id="reader" style="width: 100%;"></div>
+            <button id="cancel-camera" class="btn-secondary" style="margin-top: 15px; width: 100%;">İptal</button>
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>
