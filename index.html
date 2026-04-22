@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>USTA PDKS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="logo">
+                <h2><span style="color: #1A365D;">USTA</span> <span style="color: #F97316;">PDKS</span></h2>
+            </div>
+            <p>Personel Girişi</p>
+            <input type="tel" id="phone-input" placeholder="Telefon Numarası (Örn: 5321234567)" maxlength="10">
+            <input type="password" id="password-input" placeholder="Şifre">
+            <button id="login-btn" class="btn-primary">Giriş Yap</button>
+            <p id="login-error" style="color: red; display: none; margin-top: 10px; font-size: 14px;"></p>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="screen">
+        <div class="header">
+            <i class="fas fa-bars"></i>
+            <h3><span style="color: #1A365D;">USTA</span> <span style="color: #F97316;">PDKS</span></h3>
+            <i class="fas fa-bell"></i>
+        </div>
+        
+        <div class="user-info">
+            <h4 id="welcome-text">Hoş geldin, Yükleniyor...</h4>
+            <p id="date-text"></p>
+        </div>
+
+        <div class="action-buttons">
+            <button id="btn-giris" class="action-btn enter-btn">
+                <div class="btn-content">
+                    <span class="btn-title">Giriş Yap</span>
+                    <i class="fas fa-qrcode"></i>
+                </div>
+            </button>
+            <button id="btn-cikis" class="action-btn exit-btn">
+                <div class="btn-content">
+                    <span class="btn-title">Çıkış Yap</span>
+                    <i class="fas fa-qrcode"></i>
+                </div>
+            </button>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>0</h3>
+                <p>Bugün Gelenler</p>
+            </div>
+            <div class="stat-card">
+                <h3>0</h3>
+                <p>Geç Kalanlar</p>
+            </div>
+        </div>
+
+        <button id="logout-btn" class="btn-secondary" style="margin: 20px; width: calc(100% - 40px);">Oturumu Kapat</button>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
