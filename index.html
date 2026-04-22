@@ -65,13 +65,12 @@
         <button id="logout-btn" class="btn-secondary" style="margin: 20px; width: calc(100% - 40px);">Oturumu Kapat</button>
     </div>
 
-    <div id="camera-modal" class="modal">
-        <div class="modal-content">
-            <span id="close-camera">&times;</span>
-            <h3 style="margin-bottom: 15px; color: #1A365D;">QR Kodu Okutun</h3>
-            <div id="reader" style="width: 100%;"></div>
-            <button id="cancel-camera" class="btn-secondary" style="margin-top: 15px; width: 100%;">İptal</button>
-        </div>
+    <div id="camera-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center;">
+        <button id="cancel-camera-btn" style="position: absolute; top: 40px; left: 20px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 8px; font-size: 16px; z-index: 10000; cursor: pointer;">
+            <i class="fas fa-times"></i> İptal
+        </button>
+        <h3 style="color: white; position: absolute; top: 45px; z-index: 9998; text-align: center; width: 100%;">Karekod'u Çerçeveye Hizalayın</h3>
+        <div id="reader" style="width: 100%; max-width: 500px; background: #000;"></div>
     </div>
 
     <script type="module" src="app.js"></script>
