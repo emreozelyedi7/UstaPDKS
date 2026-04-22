@@ -1,39 +1,137 @@
-/* YENİ: Kamera Penceresi (Modal) Tasarımı */
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    background-color: rgba(0,0,0,0.8); 
-    justify-content: center;
-    align-items: center;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.modal-content {
-    background-color: #fefefe;
-    padding: 20px;
+body {
+    background-color: #F3F4F6;
+    color: #333;
+    overflow-x: hidden;
+}
+
+.screen {
+    display: none;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Giriş Ekranı */
+.login-container {
+    margin: auto;
+    background: white;
+    padding: 30px;
     border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     width: 90%;
     max-width: 400px;
     text-align: center;
-    position: relative;
 }
 
-#close-camera {
-    position: absolute;
-    right: 20px;
-    top: 15px;
-    font-size: 28px;
+.login-container h2 { font-size: 28px; margin-bottom: 5px; }
+.login-container p { color: #666; margin-bottom: 20px; }
+
+input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background-color: #F97316;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
     font-weight: bold;
-    color: #aaa;
     cursor: pointer;
 }
 
-#close-camera:hover, #close-camera:focus {
-    color: black;
-    text-decoration: none;
+.btn-secondary {
+    padding: 15px;
+    background-color: #1A365D;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
     cursor: pointer;
 }
+
+/* Ana Ekran */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.user-info {
+    padding: 20px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    padding: 0 20px;
+    margin-bottom: 20px;
+}
+
+.action-btn {
+    flex: 1;
+    height: 120px;
+    border-radius: 15px;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.enter-btn { background-color: #F97316; }
+.exit-btn { background-color: #1A365D; }
+
+.btn-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-content i { font-size: 30px; opacity: 0.8; }
+
+.stats-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 0 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+}
+
+.stat-card h3 { color: #1A365D; font-size: 24px; }
+.stat-card p { color: #666; font-size: 14px; margin-top: 5px; }
+
+/* QR Kütüphanesi Özel Ayarları (Kameranın düzgün görünmesi için) */
+#reader__dashboard_section_csr span { color: white !important; }
+#reader__dashboard_section_swaplink { color: #F97316 !important; }
