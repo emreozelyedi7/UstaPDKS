@@ -48,7 +48,14 @@
         </div>
         
         <div style="padding: 20px;">
-            <h4 style="margin-bottom: 15px; color: #333;">Genel Bakış (Bugün)</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="color: #333; margin: 0;">Genel Bakış (Bugün)</h4>
+                <select id="location-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-weight: bold; color: #1A365D; background: white; cursor: pointer;">
+                    <option value="Tümü">🌍 Tüm Şubeler</option>
+                    <option value="Pendik Şube">📍 Pendik Şube</option>
+                    <option value="Atölye">🛠️ Atölye</option>
+                </select>
+            </div>
             
             <div class="admin-grid">
                 <div class="admin-card" onclick="detayAc('Bugün Gelenler')">
