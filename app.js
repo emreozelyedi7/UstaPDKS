@@ -16,7 +16,21 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// YÖNETİCİ NUMARASI
 const ADMIN_PHONE = "5324328072"; 
+
+// ================= YENİ: PERSONEL REHBERİ =================
+// Numaraları ve karşılığındaki isimleri buraya yazıyoruz
+const personelRehberi = {
+    "5324328072": "Emre Özel İş",
+    "5419604133": "Emre Özel", // Örnek olarak bırakıldı, silebilir veya değiştirebilirsin
+};
+
+// Numarayı isme çeviren ufak yardımcı fonksiyon
+const ismeCevir = (telefonNumarasi) => {
+    return personelRehberi[telefonNumarasi] || telefonNumarasi; // Rehberde yoksa numarayı gösterir
+};
+// ==========================================================
 
 const gecerliKarekodlar = {
     "qr_pendik": "Pendik Şube",
@@ -67,7 +81,6 @@ const adminVerileriniHesapla = async () => {
     } catch (e) { console.log(e); }
 };
 
-// 00:00 SIFIRLAMA MANTIĞI BURADA EKLENDİ
 const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     const q = query(collection(db, "hareketler"), where("personel_tel", "==", phone));
     const snapshot = await getDocs(q);
@@ -81,12 +94,11 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
         const bugunTarihStr = new Date().toLocaleDateString('tr-TR');
         const kayitTarihiStr = sonKayit.tarih_saat ? sonKayit.tarih_saat.toDate().toLocaleDateString('tr-TR') : bugunTarihStr;
 
-        // Eğer son kayıt Giriş ise ama bugüne ait değilse (Dünden kalmışsa), onu otomatik ÇIKIŞ olarak varsay!
         if (sonKayit.islem_tipi === "Giriş") {
             if (kayitTarihiStr === bugunTarihStr) {
                 son = "Giriş";
             } else {
-                son = "Çıkış"; // Gece 00:00'ı geçtiği için sıfırlandı
+                son = "Çıkış"; 
             }
         } else {
             son = "Çıkış";
@@ -116,6 +128,7 @@ let beklemedekiKayıt = null;
 const veritabaninaYaz = async (tip, gercekKonum, islemTuru, farkDakika, islemNotu) => {
     const user = auth.currentUser;
     const phone = user.email.split('@')[0];
+    const isim = ismeCevir(phone); // İsim verisini al
     
     const kaydedilecekVeri = {
         personel_tel: phone,
@@ -128,11 +141,11 @@ const veritabaninaYaz = async (tip, gercekKonum, islemTuru, farkDakika, islemNot
     if (islemTuru === "Gecikme") {
         kaydedilecekVeri.islem_notu = islemNotu || "Nedeni belirtilmedi";
         kaydedilecekVeri.durum_etiketi = "Geç Kaldı";
-        sonUyari = `\n\n🚨 Kaydınız ${farkDakika} dakika gecikmeli olarak sisteme işlendi.`;
+        sonUyari = `\n\n🚨 Sayın ${isim}, kaydınız ${farkDakika} dakika gecikmeli olarak işlendi.`;
     } else if (islemTuru === "Erken Cikis") {
         kaydedilecekVeri.islem_notu = islemNotu || "Nedeni belirtilmedi";
         kaydedilecekVeri.durum_etiketi = "Erken Çıktı";
-        sonUyari = `\n\n⚠️ Kaydınız ${farkDakika} dakika erken çıkış olarak sisteme işlendi.`;
+        sonUyari = `\n\n⚠️ Sayın ${isim}, kaydınız ${farkDakika} dakika erken çıkış olarak işlendi.`;
     }
 
     try {
@@ -176,7 +189,6 @@ const kamerayiAc = (tip) => {
             cameraScreen.style.display = "none";
             let loc = gecerliKarekodlar[code];
             
-            // Saat Kontrolleri
             const simdi = new Date();
             const suanSaat = simdi.getHours();
             const suanDakika = simdi.getMinutes();
@@ -184,39 +196,40 @@ const kamerayiAc = (tip) => {
             let islemTuru = "";
             let farkDakika = 0;
 
-            // 1. Gecikme Kontrolü (09:00 Sonrası Giriş)
             if (tip === "Giriş" && (suanSaat > 9 || (suanSaat === 9 && suanDakika > 0))) {
                 islemTuru = "Gecikme";
                 farkDakika = (suanSaat * 60 + suanDakika) - (9 * 60);
             } 
-            // 2. Erken Çıkış Kontrolü (18:00 Öncesi Çıkış)
             else if (tip === "Çıkış" && suanSaat < 18) {
                 islemTuru = "Erken Cikis";
                 farkDakika = (18 * 60) - (suanSaat * 60 + suanDakika);
             }
 
             html5QrCode.stop().catch(()=>{});
+            
+            const phone = auth.currentUser.email.split('@')[0];
+            const isim = ismeCevir(phone); // İsmi Çek
 
-            // Modalı Hazırla ve Aç
             if (islemTuru !== "") {
                 beklemedekiKayıt = { tip, loc, islemTuru, farkDakika };
-                document.getElementById('reason-input').value = ""; // Kutuyu temizle
+                document.getElementById('reason-input').value = ""; 
 
                 if (islemTuru === "Gecikme") {
                     document.getElementById('reason-icon').className = "fas fa-clock";
                     document.getElementById('reason-icon').style.color = "#ef4444";
                     document.getElementById('reason-title').innerText = "Gecikme Bildirimi";
-                    document.getElementById('reason-text').innerText = `Dikkat: 09:00 mesai başlangıcından ${farkDakika} dakika sonra giriş yaptınız. Lütfen gecikme nedeninizi belirtin.`;
+                    // İsme Özel Metin
+                    document.getElementById('reason-text').innerText = `Sayın ${isim}, mesaiye ${farkDakika} dakika geç kaldınız. Lütfen mesai saatlerine özen gösterelim. Geç kalma nedeninizi kısaca belirtebilirsiniz.`;
                 } else if (islemTuru === "Erken Cikis") {
                     document.getElementById('reason-icon').className = "fas fa-door-open";
                     document.getElementById('reason-icon').style.color = "#F97316";
                     document.getElementById('reason-title').innerText = "Erken Çıkış Bildirimi";
-                    document.getElementById('reason-text').innerText = `Dikkat: 18:00 mesai bitişinden ${farkDakika} dakika önce çıkış yapıyorsunuz. Lütfen erken çıkış nedeninizi belirtin.`;
+                    // İsme Özel Metin
+                    document.getElementById('reason-text').innerText = `Sayın ${isim}, mesai bitişinden ${farkDakika} dakika önce çıkış yapıyorsunuz. Lütfen erken çıkış nedeninizi belirtin.`;
                 }
 
                 document.getElementById('reason-modal').style.display = "flex";
             } else {
-                // Zamanında geldiyse/çıktıysa direkt kaydet
                 veritabaninaYaz(tip, loc, "", 0, "");
             }
 
@@ -231,12 +244,14 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         loginScreen.classList.remove('active');
         const p = user.email.split('@')[0];
+        const isim = ismeCevir(p); // Hoş geldin metni için ismi al
+        
         if(p === ADMIN_PHONE) {
-            document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${p}`;
+            document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${isim}`;
             adminDashboardScreen.classList.add('active');
             adminVerileriniHesapla(); arayuzDurumuGuncelle(p, true);
         } else {
-            document.getElementById('welcome-text').innerText = `Hoş geldin, ${p}`;
+            document.getElementById('welcome-text').innerText = `Hoş geldin, ${isim}`;
             dashboardScreen.classList.add('active');
             arayuzDurumuGuncelle(p, false);
         }
@@ -282,15 +297,12 @@ window.detayAc = (kategori) => {
         if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
         const tarih = veri.tarih_saat.toDate();
         
-        // Detaylarda hem o günün GİRİŞ hem de ÇIKIŞ işlemlerini gösterelim ki Erken çıkışları da görebilesin
         if(tarih.toLocaleDateString('tr-TR') === bugun) {
             
             let isLate = (veri.durum_etiketi === "Geç Kaldı");
             let isEarly = (veri.durum_etiketi === "Erken Çıktı");
             
-            // Eğer kategori Geç Kalanlar ise ve bu kayıt geç kalma değilse atla
             if(kategori === "Geç Kalanlar" && !isLate) return;
-            // Bugün Gelenler listesinde Çıkışları da göstermek mantıklıdır, kişi ne zaman gelmiş ne zaman çıkmış görürüz
             
             const saatStr = tarih.getHours().toString().padStart(2, '0') + ":" + tarih.getMinutes().toString().padStart(2, '0');
             
@@ -305,10 +317,14 @@ window.detayAc = (kategori) => {
             let solBorder = "on-time";
             
             if (isLate) { durumYazisi = "Geç Kaldı"; durumRengi = "#ef4444"; solBorder = "late"; }
-            if (isEarly) { durumYazisi = "Erken Çıktı"; durumRengi = "#F97316"; solBorder = "late"; } // Erken çıkışları da turuncu gösterelim
+            if (isEarly) { durumYazisi = "Erken Çıktı"; durumRengi = "#F97316"; solBorder = "late"; }
+
+            // LİSTEDE DE İSİM GÖRÜNMESİNİ SAĞLADIK
+            let gosterilecekIsim = ismeCevir(veri.personel_tel);
 
             html += `<div class="list-item ${solBorder}" ${isEarly ? 'style="border-left-color: #F97316;"' : ''}>
-                    <strong>${veri.personel_tel}</strong> <span style="font-size:11px; color:#888;">(${veri.lokasyon})</span><br>
+                    <strong>${gosterilecekIsim}</strong> <span style="font-size:11px; color:#888;">(${veri.lokasyon})</span><br>
+                    <small style="color:#777; font-size:11px;">Tel: ${veri.personel_tel}</small><br>
                     <small>${veri.islem_tipi}: ${saatStr}</small>
                     <span style="float:right; color:${durumRengi}; font-weight:bold;">${durumYazisi}</span>
                     ${nedenHtml}
