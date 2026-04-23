@@ -19,7 +19,7 @@ const db = getFirestore(app);
 // --- YÖNETİCİ AYARI ---
 const ADMIN_PHONE = "5324328072"; 
 
-// GEÇERLİ ŞUBELER (Merkez Ofis Tamamen Kaldırıldı)
+// GEÇERLİ ŞUBELER
 const gecerliKarekodlar = {
     "qr_pendik": "Pendik Şube",
     "qr_atolye": "Atölye"
@@ -33,7 +33,23 @@ const locationFilter = document.getElementById('location-filter');
 
 let tumHareketlerCache = [];
 
-// 1. DURUM GÜNCELLEME
+// ================= SAĞA KAYDIRARAK GERİ ÇIKMA KORUMASI =================
+// Telefonun kendi geri tuşunu veya kaydırma hareketini yakalıyoruz
+window.addEventListener('popstate', (e) => {
+    if (detailScreen.classList.contains('active')) {
+        // Eğer detay ekranındayken geri kaydırılırsa, sadece detayı kapat ana sayfaya dön
+        detailScreen.classList.remove('active');
+        adminDashboardScreen.classList.add('active');
+    }
+});
+
+// Eski manuel ok butonumuzu da tarayıcının geri butonuna bağlıyoruz
+document.getElementById('back-to-admin-dash').addEventListener('click', () => {
+    history.back(); // Bu komut yukarıdaki popstate'i tetikler ve ekranı kapatır
+});
+// =========================================================================
+
+// 1. DURUM GÜNCELLEME (ADMIN)
 const adminVerileriniHesapla = async () => {
     try {
         const querySnapshot = await getDocs(collection(db, "hareketler"));
@@ -43,6 +59,7 @@ const adminVerileriniHesapla = async () => {
         const seciliSube = locationFilter.value;
         let bugunGelenler = new Set();
         let bugunGecKalanlar = new Set();
+        
         tumHareketlerCache.forEach(veri => {
             if(!veri.tarih_saat) return;
             if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
@@ -195,19 +212,21 @@ document.getElementById('cancel-camera-btn').addEventListener('click', () => {
     html5QrCode.stop().then(() => cameraScreen.style.display = "none");
 });
 locationFilter.addEventListener('change', adminVerileriniHesapla);
-document.getElementById('back-to-admin-dash').addEventListener('click', () => {
-    detailScreen.classList.remove('active'); adminDashboardScreen.classList.add('active');
-});
 
-// window.detayAc fonksiyonu aynı kalacak
+// Pano Kartlarına Tıklama Mantığı
 window.detayAc = (kategori) => {
     document.getElementById('detail-title').innerText = kategori;
     adminDashboardScreen.classList.remove('active');
     detailScreen.classList.add('active');
+    
+    // YENİ: Tarayıcıya sahte bir geçmiş ekliyoruz ki geri kaydırdığında ana sayfaya dönebilsin
+    history.pushState({ ekran: 'detay' }, '', '#detay');
+
     const container = document.getElementById('detail-list-container');
     const seciliSube = locationFilter.value;
     let html = "";
     const bugun = new Date().toLocaleDateString('tr-TR');
+    
     tumHareketlerCache.sort((a, b) => (b.tarih_saat?.toMillis() || 0) - (a.tarih_saat?.toMillis() || 0));
     tumHareketlerCache.forEach(veri => {
         if(!veri.tarih_saat) return;
