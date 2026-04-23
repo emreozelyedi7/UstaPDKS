@@ -31,16 +31,13 @@ const gecerliKarekodlar = {
     "qr_atolye": "Atölye"
 };
 
-// --- GÜNCEL: KOORDİNATLAR VE MESAFE SINIRI ---
 const subeKonumlari = {
     "Pendik Şube": { lat: 40.899520532909584, lng: 29.258524165071616 }, 
     "Atölye": { lat: 40.899520532909584, lng: 29.258524165071616 }      
 };
 
-// İzin verilen sapma mesafesi (150 Metre)
 const MAKSIMUM_MESAFE_METRE = 150; 
 
-// Kuş uçuşu mesafe hesaplama (Haversine Formülü)
 const mesafeHesapla = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3; 
     const p1 = lat1 * Math.PI/180;
@@ -342,3 +339,59 @@ window.detayAc = (kategori) => {
     });
     container.innerHTML = html || "<p>Kayıt bulunamadı.</p>";
 };
+
+// ================= İZİN PLANLAMA (YENİ) =================
+window.izinPlanlamaAc = () => {
+    document.getElementById('leave-modal').style.display = 'flex';
+    document.getElementById('leave-start-date').value = "";
+    document.getElementById('leave-end-date').value = "";
+    document.getElementById('leave-target-type').value = "Tümü";
+    document.getElementById('leave-person-container').style.display = 'none';
+
+    // Rehberi select kutusuna bas
+    const personSelect = document.getElementById('leave-person-select');
+    personSelect.innerHTML = "";
+    for (let tel in personelRehberi) {
+        if(tel !== ADMIN_PHONE) { // Yöneticiyi izne çıkarmaya gerek yok :)
+            personSelect.innerHTML += `<option value="${tel}">${personelRehberi[tel]} (${tel})</option>`;
+        }
+    }
+};
+
+window.togglePersonSelect = () => {
+    const tip = document.getElementById('leave-target-type').value;
+    document.getElementById('leave-person-container').style.display = tip === "Kişi Seç" ? "block" : "none";
+};
+
+document.getElementById('save-leave-btn').addEventListener('click', async () => {
+    const baslangic = document.getElementById('leave-start-date').value;
+    const bitis = document.getElementById('leave-end-date').value;
+    const tur = document.getElementById('leave-target-type').value;
+    
+    if (!baslangic || !bitis) {
+        return alert("Lütfen izin başlangıç ve bitiş tarihlerini seçin!");
+    }
+    if (new Date(baslangic) > new Date(bitis)) {
+        return alert("Bitiş tarihi, başlangıç tarihinden önce olamaz!");
+    }
+
+    let hedef = "Tümü";
+    if (tur === "Kişi Seç") {
+        hedef = document.getElementById('leave-person-select').value;
+    }
+
+    try {
+        await addDoc(collection(db, "izinler"), {
+            baslangic_tarihi: baslangic,
+            bitis_tarihi: bitis,
+            izin_hedefi: hedef,
+            isleyen_yonetici: auth.currentUser.email.split('@')[0],
+            olusturulma: serverTimestamp()
+        });
+        
+        alert(`✅ İzin kaydı başarıyla oluşturuldu!\n\nTarih: ${baslangic} / ${bitis}\nHedef: ${hedef === "Tümü" ? "Tüm Şirket" : ismeCevir(hedef)}`);
+        document.getElementById('leave-modal').style.display = 'none';
+    } catch (e) {
+        alert("Hata: İzin kaydedilemedi.");
+    }
+});
