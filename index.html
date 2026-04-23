@@ -46,6 +46,24 @@
             <h3>Yönetici Paneli</h3>
             <button id="admin-logout-btn" style="background: none; border: none; font-size: 20px; color: #1A365D;"><i class="fas fa-sign-out-alt"></i></button>
         </div>
+
+        <div style="background: white; padding: 15px 20px; border-bottom: 1px solid #eee;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <h4 id="admin-welcome-text" style="color: #1A365D; margin-bottom: 5px;">Yönetici</h4>
+                    <div id="admin-status-badge" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #eee;">Durum Kontrolü...</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="admin-btn-giris" class="action-btn enter-btn" style="display: none; height: 70px; margin-bottom: 0; flex: 1;">
+                    <div class="btn-content" style="gap: 5px; font-size: 14px;"><i class="fas fa-sign-in-alt" style="font-size: 20px;"></i><span>Mesai Başlat</span></div>
+                </button>
+                <button id="admin-btn-cikis" class="action-btn exit-btn" style="display: none; height: 70px; margin-bottom: 0; flex: 1;">
+                    <div class="btn-content" style="gap: 5px; font-size: 14px;"><i class="fas fa-sign-out-alt" style="font-size: 20px;"></i><span>Mesai Bitir</span></div>
+                </button>
+            </div>
+        </div>
         
         <div style="padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -63,19 +81,16 @@
                     <p class="card-title">Bugün gelenler</p>
                     <p class="card-desc">En az bir kere giriş yapanlar</p>
                 </div>
-
                 <div class="admin-card" onclick="detayAc('Bugün Gelmeyenler')">
                     <h2 id="count-gelmeyenler" style="color: #6b7280;">0</h2>
                     <p class="card-title">Bugün gelmeyenler</p>
                     <p class="card-desc">Hiçbir işlemi olmayanlar</p>
                 </div>
-
                 <div class="admin-card" onclick="detayAc('Geç Kalanlar')">
                     <h2 id="count-geckalanlar" style="color: #ef4444;">0</h2>
                     <p class="card-title">Geç kalanlar</p>
                     <p class="card-desc">09:00'dan sonra girenler</p>
                 </div>
-
                 <div class="admin-card" onclick="detayAc('Maaş Kesinti Raporu')" style="border-left: 4px solid #F97316;">
                     <h2 style="color: #F97316;"><i class="fas fa-calculator"></i></h2>
                     <p class="card-title">Kesinti Raporu</p>
@@ -90,8 +105,7 @@
             <button id="back-to-admin-dash" style="background: none; border: none; font-size: 20px;"><i class="fas fa-arrow-left"></i></button>
             <h3 id="detail-title">Detay Listesi</h3>
         </div>
-        <div style="padding: 15px;" id="detail-list-container">
-            </div>
+        <div style="padding: 15px;" id="detail-list-container"></div>
     </div>
 
     <div id="camera-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; flex-direction: column; justify-content: center;">
