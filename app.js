@@ -16,26 +16,42 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// YÖNETİCİ NUMARASI
+// ================= AYARLAR =================
 const ADMIN_PHONE = "5324328072"; 
 
-// ================= YENİ: PERSONEL REHBERİ =================
-// Numaraları ve karşılığındaki isimleri buraya yazıyoruz
 const personelRehberi = {
-    "5324328072": "Emre Özel İş",
-    "5419604133": "Emre Özel", // Örnek olarak bırakıldı, silebilir veya değiştirebilirsin
+    "5324328072": "Emre Özel",
+    "5551234567": "Test Personel"
 };
 
-// Numarayı isme çeviren ufak yardımcı fonksiyon
-const ismeCevir = (telefonNumarasi) => {
-    return personelRehberi[telefonNumarasi] || telefonNumarasi; // Rehberde yoksa numarayı gösterir
-};
-// ==========================================================
+const ismeCevir = (telefonNumarasi) => { return personelRehberi[telefonNumarasi] || telefonNumarasi; };
 
 const gecerliKarekodlar = {
     "qr_pendik": "Pendik Şube",
     "qr_atolye": "Atölye"
 };
+
+// --- GÜNCEL: KOORDİNATLAR VE MESAFE SINIRI ---
+const subeKonumlari = {
+    "Pendik Şube": { lat: 40.899520532909584, lng: 29.258524165071616 }, 
+    "Atölye": { lat: 40.899520532909584, lng: 29.258524165071616 }      
+};
+
+// İzin verilen sapma mesafesi (150 Metre)
+const MAKSIMUM_MESAFE_METRE = 150; 
+
+// Kuş uçuşu mesafe hesaplama (Haversine Formülü)
+const mesafeHesapla = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; 
+    const p1 = lat1 * Math.PI/180;
+    const p2 = lat2 * Math.PI/180;
+    const dp = (lat2-lat1) * Math.PI/180;
+    const dl = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+};
+// ============================================
 
 const loginScreen = document.getElementById('login-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
@@ -45,7 +61,6 @@ const locationFilter = document.getElementById('location-filter');
 
 let tumHareketlerCache = [];
 
-// ================= SAĞA KAYDIRARAK GERİ ÇIKMA KORUMASI =================
 window.addEventListener('popstate', (e) => {
     if (detailScreen.classList.contains('active')) {
         detailScreen.classList.remove('active');
@@ -95,14 +110,9 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
         const kayitTarihiStr = sonKayit.tarih_saat ? sonKayit.tarih_saat.toDate().toLocaleDateString('tr-TR') : bugunTarihStr;
 
         if (sonKayit.islem_tipi === "Giriş") {
-            if (kayitTarihiStr === bugunTarihStr) {
-                son = "Giriş";
-            } else {
-                son = "Çıkış"; 
-            }
-        } else {
-            son = "Çıkış";
-        }
+            if (kayitTarihiStr === bugunTarihStr) { son = "Giriş"; } 
+            else { son = "Çıkış"; }
+        } else { son = "Çıkış"; }
     }
     
     const prefix = isAdmin ? 'admin-' : '';
@@ -119,16 +129,13 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     }
 };
 
-// ================= KAMERA, GECİKME/ERKEN ÇIKIŞ VE KAYIT SİSTEMİ =================
-const cameraScreen = document.getElementById('camera-screen');
-const html5QrCode = new Html5Qrcode("reader");
-let islemDevamEdiyor = false;
+// ================= KAYIT İŞLEMİ =================
 let beklemedekiKayıt = null; 
 
 const veritabaninaYaz = async (tip, gercekKonum, islemTuru, farkDakika, islemNotu) => {
     const user = auth.currentUser;
     const phone = user.email.split('@')[0];
-    const isim = ismeCevir(phone); // İsim verisini al
+    const isim = ismeCevir(phone); 
     
     const kaydedilecekVeri = {
         personel_tel: phone,
@@ -153,15 +160,13 @@ const veritabaninaYaz = async (tip, gercekKonum, islemTuru, farkDakika, islemNot
         alert(`✅ ${gercekKonum} - ${tip} İşlemi Başarılı!${sonUyari}`);
         
         if(phone === ADMIN_PHONE) {
-            arayuzDurumuGuncelle(phone, true);
-            adminVerileriniHesapla();
+            arayuzDurumuGuncelle(phone, true); adminVerileriniHesapla();
         } else {
             arayuzDurumuGuncelle(phone, false); 
         }
     } catch (e) { alert("Hata: Kayıt yapılamadı!"); }
 };
 
-// Mazeret Modalı Butonları
 document.getElementById('reason-submit-btn').addEventListener('click', () => {
     const reason = document.getElementById('reason-input').value.trim();
     document.getElementById('reason-modal').style.display = "none";
@@ -179,60 +184,78 @@ document.getElementById('reason-skip-btn').addEventListener('click', () => {
     }
 });
 
+// ================= KAMERA VE GPS KONTROLÜ =================
+const cameraScreen = document.getElementById('camera-screen');
+const html5QrCode = new Html5Qrcode("reader");
+let islemDevamEdiyor = false;
+
 const kamerayiAc = (tip) => {
     islemDevamEdiyor = false;
     cameraScreen.style.display = "flex";
+    
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
         let code = text.trim();
+        
         if(gecerliKarekodlar[code] && !islemDevamEdiyor) {
             islemDevamEdiyor = true;
+            html5QrCode.stop().catch(()=>{}); 
             cameraScreen.style.display = "none";
+            
             let loc = gecerliKarekodlar[code];
-            
-            const simdi = new Date();
-            const suanSaat = simdi.getHours();
-            const suanDakika = simdi.getMinutes();
-            
-            let islemTuru = "";
-            let farkDakika = 0;
 
-            if (tip === "Giriş" && (suanSaat > 9 || (suanSaat === 9 && suanDakika > 0))) {
-                islemTuru = "Gecikme";
-                farkDakika = (suanSaat * 60 + suanDakika) - (9 * 60);
-            } 
-            else if (tip === "Çıkış" && suanSaat < 18) {
-                islemTuru = "Erken Cikis";
-                farkDakika = (18 * 60) - (suanSaat * 60 + suanDakika);
-            }
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const personelLat = position.coords.latitude;
+                        const personelLon = position.coords.longitude;
+                        const subeHedef = subeKonumlari[loc];
+                        const aradakiMesafe = mesafeHesapla(personelLat, personelLon, subeHedef.lat, subeHedef.lng);
 
-            html5QrCode.stop().catch(()=>{});
-            
-            const phone = auth.currentUser.email.split('@')[0];
-            const isim = ismeCevir(phone); // İsmi Çek
+                        if (aradakiMesafe <= MAKSIMUM_MESAFE_METRE) {
+                            const simdi = new Date();
+                            const suanSaat = simdi.getHours();
+                            const suanDakika = simdi.getMinutes();
+                            let islemTuru = ""; let farkDakika = 0;
 
-            if (islemTuru !== "") {
-                beklemedekiKayıt = { tip, loc, islemTuru, farkDakika };
-                document.getElementById('reason-input').value = ""; 
+                            if (tip === "Giriş" && (suanSaat > 9 || (suanSaat === 9 && suanDakika > 0))) {
+                                islemTuru = "Gecikme"; farkDakika = (suanSaat * 60 + suanDakika) - (9 * 60);
+                            } else if (tip === "Çıkış" && suanSaat < 18) {
+                                islemTuru = "Erken Cikis"; farkDakika = (18 * 60) - (suanSaat * 60 + suanDakika);
+                            }
 
-                if (islemTuru === "Gecikme") {
-                    document.getElementById('reason-icon').className = "fas fa-clock";
-                    document.getElementById('reason-icon').style.color = "#ef4444";
-                    document.getElementById('reason-title').innerText = "Gecikme Bildirimi";
-                    // İsme Özel Metin
-                    document.getElementById('reason-text').innerText = `Sayın ${isim}, mesaiye ${farkDakika} dakika geç kaldınız. Lütfen mesai saatlerine özen gösterelim. Geç kalma nedeninizi kısaca belirtebilirsiniz.`;
-                } else if (islemTuru === "Erken Cikis") {
-                    document.getElementById('reason-icon').className = "fas fa-door-open";
-                    document.getElementById('reason-icon').style.color = "#F97316";
-                    document.getElementById('reason-title').innerText = "Erken Çıkış Bildirimi";
-                    // İsme Özel Metin
-                    document.getElementById('reason-text').innerText = `Sayın ${isim}, mesai bitişinden ${farkDakika} dakika önce çıkış yapıyorsunuz. Lütfen erken çıkış nedeninizi belirtin.`;
-                }
+                            const phone = auth.currentUser.email.split('@')[0];
+                            const isim = ismeCevir(phone);
 
-                document.getElementById('reason-modal').style.display = "flex";
+                            if (islemTuru !== "") {
+                                beklemedekiKayıt = { tip, loc, islemTuru, farkDakika };
+                                document.getElementById('reason-input').value = ""; 
+                                if (islemTuru === "Gecikme") {
+                                    document.getElementById('reason-icon').className = "fas fa-clock";
+                                    document.getElementById('reason-icon').style.color = "#ef4444";
+                                    document.getElementById('reason-title').innerText = "Gecikme Bildirimi";
+                                    document.getElementById('reason-text').innerText = `Sayın ${isim}, mesaiye ${farkDakika} dakika geç kaldınız. Lütfen geç kalma nedeninizi kısaca belirtebilirsiniz.`;
+                                } else {
+                                    document.getElementById('reason-icon').className = "fas fa-door-open";
+                                    document.getElementById('reason-icon').style.color = "#F97316";
+                                    document.getElementById('reason-title').innerText = "Erken Çıkış Bildirimi";
+                                    document.getElementById('reason-text').innerText = `Sayın ${isim}, mesai bitişinden ${farkDakika} dakika önce çıkış yapıyorsunuz. Lütfen nedenini belirtin.`;
+                                }
+                                document.getElementById('reason-modal').style.display = "flex";
+                            } else {
+                                veritabaninaYaz(tip, loc, "", 0, "");
+                            }
+                        } else {
+                            alert(`🚨 GÜVENLİK İHLALİ!\n\nŞubeden çok uzaktasınız.\nMevcut Mesafe: ${Math.round(aradakiMesafe)} metre.\nİzin Verilen: ${MAKSIMUM_MESAFE_METRE} metre.\n\nLütfen giriş/çıkış işlemini dükkan sınırları içerisinde yapınız.`);
+                        }
+                    },
+                    (error) => {
+                        alert("Konum alınamadı! Lütfen GPS özelliğinin açık olduğundan ve tarayıcıya izin verdiğinizden emin olun.");
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
             } else {
-                veritabaninaYaz(tip, loc, "", 0, "");
+                alert("Telefonunuz konum özelliğini desteklemiyor.");
             }
-
         } else if (!gecerliKarekodlar[code] && !islemDevamEdiyor) {
             alert("Geçersiz QR Kod! Lütfen şubenize ait kodu okutun.");
         }
@@ -244,8 +267,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         loginScreen.classList.remove('active');
         const p = user.email.split('@')[0];
-        const isim = ismeCevir(p); // Hoş geldin metni için ismi al
-        
+        const isim = ismeCevir(p); 
         if(p === ADMIN_PHONE) {
             document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${isim}`;
             adminDashboardScreen.classList.add('active');
@@ -279,49 +301,36 @@ document.getElementById('cancel-camera-btn').addEventListener('click', () => {
 });
 locationFilter.addEventListener('change', adminVerileriniHesapla);
 
-// Pano Kartlarına Tıklama Mantığı
 window.detayAc = (kategori) => {
     document.getElementById('detail-title').innerText = kategori;
     adminDashboardScreen.classList.remove('active');
     detailScreen.classList.add('active');
     history.pushState({ ekran: 'detay' }, '', '#detay');
-
     const container = document.getElementById('detail-list-container');
     const seciliSube = locationFilter.value;
     let html = "";
     const bugun = new Date().toLocaleDateString('tr-TR');
-    
     tumHareketlerCache.sort((a, b) => (b.tarih_saat?.toMillis() || 0) - (a.tarih_saat?.toMillis() || 0));
     tumHareketlerCache.forEach(veri => {
         if(!veri.tarih_saat) return;
         if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
         const tarih = veri.tarih_saat.toDate();
-        
         if(tarih.toLocaleDateString('tr-TR') === bugun) {
-            
             let isLate = (veri.durum_etiketi === "Geç Kaldı");
             let isEarly = (veri.durum_etiketi === "Erken Çıktı");
-            
             if(kategori === "Geç Kalanlar" && !isLate) return;
-            
             const saatStr = tarih.getHours().toString().padStart(2, '0') + ":" + tarih.getMinutes().toString().padStart(2, '0');
-            
             let nedenHtml = "";
             if ((isLate || isEarly) && veri.islem_notu) {
                 let borderRenk = isLate ? "#ef4444" : "#F97316";
                 nedenHtml = `<div style="font-size: 12px; color: #555; margin-top: 8px; background: #fef2f2; padding: 8px; border-radius: 5px; border-left: 2px solid ${borderRenk};"><strong>Açıklama:</strong> ${veri.islem_notu}</div>`;
             }
-
             let durumYazisi = "Zamanında";
             let durumRengi = "#10b981";
             let solBorder = "on-time";
-            
             if (isLate) { durumYazisi = "Geç Kaldı"; durumRengi = "#ef4444"; solBorder = "late"; }
             if (isEarly) { durumYazisi = "Erken Çıktı"; durumRengi = "#F97316"; solBorder = "late"; }
-
-            // LİSTEDE DE İSİM GÖRÜNMESİNİ SAĞLADIK
             let gosterilecekIsim = ismeCevir(veri.personel_tel);
-
             html += `<div class="list-item ${solBorder}" ${isEarly ? 'style="border-left-color: #F97316;"' : ''}>
                     <strong>${gosterilecekIsim}</strong> <span style="font-size:11px; color:#888;">(${veri.lokasyon})</span><br>
                     <small style="color:#777; font-size:11px;">Tel: ${veri.personel_tel}</small><br>
@@ -331,5 +340,5 @@ window.detayAc = (kategori) => {
                 </div>`;
         }
     });
-    container.innerHTML = html || "<p>Bu kategoriye uygun kayıt bulunamadı.</p>";
+    container.innerHTML = html || "<p>Kayıt bulunamadı.</p>";
 };
