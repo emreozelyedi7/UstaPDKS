@@ -16,7 +16,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// YÖNETİCİ NUMARASI
 const ADMIN_PHONE = "5324328072"; 
 
 const gecerliKarekodlar = {
@@ -68,14 +67,30 @@ const adminVerileriniHesapla = async () => {
     } catch (e) { console.log(e); }
 };
 
+// 00:00 SIFIRLAMA MANTIĞI BURADA EKLENDİ
 const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     const q = query(collection(db, "hareketler"), where("personel_tel", "==", phone));
     const snapshot = await getDocs(q);
     let son = "Çıkış";
+    
     if (!snapshot.empty) {
         let docs = []; snapshot.forEach(d => docs.push(d.data()));
         docs.sort((a,b) => (b.tarih_saat?.toMillis() || 0) - (a.tarih_saat?.toMillis() || 0));
-        son = docs[0].islem_tipi;
+        
+        const sonKayit = docs[0];
+        const bugunTarihStr = new Date().toLocaleDateString('tr-TR');
+        const kayitTarihiStr = sonKayit.tarih_saat ? sonKayit.tarih_saat.toDate().toLocaleDateString('tr-TR') : bugunTarihStr;
+
+        // Eğer son kayıt Giriş ise ama bugüne ait değilse (Dünden kalmışsa), onu otomatik ÇIKIŞ olarak varsay!
+        if (sonKayit.islem_tipi === "Giriş") {
+            if (kayitTarihiStr === bugunTarihStr) {
+                son = "Giriş";
+            } else {
+                son = "Çıkış"; // Gece 00:00'ı geçtiği için sıfırlandı
+            }
+        } else {
+            son = "Çıkış";
+        }
     }
     
     const prefix = isAdmin ? 'admin-' : '';
@@ -92,13 +107,13 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     }
 };
 
-// ================= KAMERA, GECİKME VE KAYIT SİSTEMİ =================
+// ================= KAMERA, GECİKME/ERKEN ÇIKIŞ VE KAYIT SİSTEMİ =================
 const cameraScreen = document.getElementById('camera-screen');
 const html5QrCode = new Html5Qrcode("reader");
 let islemDevamEdiyor = false;
-let beklemedekiKayıt = null; // Gecikme ekranı için veriyi geçici tutar
+let beklemedekiKayıt = null; 
 
-const veritabaninaYaz = async (tip, gercekKonum, gecikmeSuresi, gecikmeNedeni) => {
+const veritabaninaYaz = async (tip, gercekKonum, islemTuru, farkDakika, islemNotu) => {
     const user = auth.currentUser;
     const phone = user.email.split('@')[0];
     
@@ -110,10 +125,14 @@ const veritabaninaYaz = async (tip, gercekKonum, gecikmeSuresi, gecikmeNedeni) =
     };
 
     let sonUyari = "";
-    if (gecikmeSuresi > 0) {
-        kaydedilecekVeri.gecikme_dakika = gecikmeSuresi;
-        kaydedilecekVeri.gecikme_nedeni = gecikmeNedeni || "Nedeni belirtilmedi";
-        sonUyari = `\n\n🚨 Kaydınız ${gecikmeSuresi} dakika gecikmeli olarak sisteme işlendi.`;
+    if (islemTuru === "Gecikme") {
+        kaydedilecekVeri.islem_notu = islemNotu || "Nedeni belirtilmedi";
+        kaydedilecekVeri.durum_etiketi = "Geç Kaldı";
+        sonUyari = `\n\n🚨 Kaydınız ${farkDakika} dakika gecikmeli olarak sisteme işlendi.`;
+    } else if (islemTuru === "Erken Cikis") {
+        kaydedilecekVeri.islem_notu = islemNotu || "Nedeni belirtilmedi";
+        kaydedilecekVeri.durum_etiketi = "Erken Çıktı";
+        sonUyari = `\n\n⚠️ Kaydınız ${farkDakika} dakika erken çıkış olarak sisteme işlendi.`;
     }
 
     try {
@@ -129,20 +148,20 @@ const veritabaninaYaz = async (tip, gercekKonum, gecikmeSuresi, gecikmeNedeni) =
     } catch (e) { alert("Hata: Kayıt yapılamadı!"); }
 };
 
-// Gecikme Modalı Butonları
-document.getElementById('late-submit-btn').addEventListener('click', () => {
-    const reason = document.getElementById('late-reason-input').value.trim();
-    document.getElementById('late-modal').style.display = "none";
+// Mazeret Modalı Butonları
+document.getElementById('reason-submit-btn').addEventListener('click', () => {
+    const reason = document.getElementById('reason-input').value.trim();
+    document.getElementById('reason-modal').style.display = "none";
     if(beklemedekiKayıt) {
-        veritabaninaYaz(beklemedekiKayıt.tip, beklemedekiKayıt.loc, beklemedekiKayıt.gecikmeSuresi, reason);
+        veritabaninaYaz(beklemedekiKayıt.tip, beklemedekiKayıt.loc, beklemedekiKayıt.islemTuru, beklemedekiKayıt.farkDakika, reason);
         beklemedekiKayıt = null;
     }
 });
 
-document.getElementById('late-skip-btn').addEventListener('click', () => {
-    document.getElementById('late-modal').style.display = "none";
+document.getElementById('reason-skip-btn').addEventListener('click', () => {
+    document.getElementById('reason-modal').style.display = "none";
     if(beklemedekiKayıt) {
-        veritabaninaYaz(beklemedekiKayıt.tip, beklemedekiKayıt.loc, beklemedekiKayıt.gecikmeSuresi, "");
+        veritabaninaYaz(beklemedekiKayıt.tip, beklemedekiKayıt.loc, beklemedekiKayıt.islemTuru, beklemedekiKayıt.farkDakika, "");
         beklemedekiKayıt = null;
     }
 });
@@ -157,27 +176,48 @@ const kamerayiAc = (tip) => {
             cameraScreen.style.display = "none";
             let loc = gecerliKarekodlar[code];
             
-            // Saat Kontrolü (Sadece Girişlerde)
+            // Saat Kontrolleri
             const simdi = new Date();
             const suanSaat = simdi.getHours();
             const suanDakika = simdi.getMinutes();
-            let gecikmeSuresi = 0;
+            
+            let islemTuru = "";
+            let farkDakika = 0;
 
+            // 1. Gecikme Kontrolü (09:00 Sonrası Giriş)
             if (tip === "Giriş" && (suanSaat > 9 || (suanSaat === 9 && suanDakika > 0))) {
-                gecikmeSuresi = (suanSaat * 60 + suanDakika) - (9 * 60);
+                islemTuru = "Gecikme";
+                farkDakika = (suanSaat * 60 + suanDakika) - (9 * 60);
+            } 
+            // 2. Erken Çıkış Kontrolü (18:00 Öncesi Çıkış)
+            else if (tip === "Çıkış" && suanSaat < 18) {
+                islemTuru = "Erken Cikis";
+                farkDakika = (18 * 60) - (suanSaat * 60 + suanDakika);
             }
 
             html5QrCode.stop().catch(()=>{});
 
-            if (gecikmeSuresi > 0) {
-                // Geç kaldıysa Modalı Aç
-                beklemedekiKayıt = { tip, loc, gecikmeSuresi };
-                document.getElementById('late-modal-text').innerText = `Dikkat: 09:00 mesai başlangıcından ${gecikmeSuresi} dakika sonra giriş yaptınız. Kaydınız 'Gecikmeli' olarak işaretlenecektir.`;
-                document.getElementById('late-reason-input').value = ""; // Kutuyu temizle
-                document.getElementById('late-modal').style.display = "flex";
+            // Modalı Hazırla ve Aç
+            if (islemTuru !== "") {
+                beklemedekiKayıt = { tip, loc, islemTuru, farkDakika };
+                document.getElementById('reason-input').value = ""; // Kutuyu temizle
+
+                if (islemTuru === "Gecikme") {
+                    document.getElementById('reason-icon').className = "fas fa-clock";
+                    document.getElementById('reason-icon').style.color = "#ef4444";
+                    document.getElementById('reason-title').innerText = "Gecikme Bildirimi";
+                    document.getElementById('reason-text').innerText = `Dikkat: 09:00 mesai başlangıcından ${farkDakika} dakika sonra giriş yaptınız. Lütfen gecikme nedeninizi belirtin.`;
+                } else if (islemTuru === "Erken Cikis") {
+                    document.getElementById('reason-icon').className = "fas fa-door-open";
+                    document.getElementById('reason-icon').style.color = "#F97316";
+                    document.getElementById('reason-title').innerText = "Erken Çıkış Bildirimi";
+                    document.getElementById('reason-text').innerText = `Dikkat: 18:00 mesai bitişinden ${farkDakika} dakika önce çıkış yapıyorsunuz. Lütfen erken çıkış nedeninizi belirtin.`;
+                }
+
+                document.getElementById('reason-modal').style.display = "flex";
             } else {
-                // Zamanında geldiyse direkt kaydet
-                veritabaninaYaz(tip, loc, 0, "");
+                // Zamanında geldiyse/çıktıysa direkt kaydet
+                veritabaninaYaz(tip, loc, "", 0, "");
             }
 
         } else if (!gecerliKarekodlar[code] && !islemDevamEdiyor) {
@@ -241,25 +281,39 @@ window.detayAc = (kategori) => {
         if(!veri.tarih_saat) return;
         if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
         const tarih = veri.tarih_saat.toDate();
-        if(tarih.toLocaleDateString('tr-TR') === bugun && veri.islem_tipi === "Giriş") {
-            let isLate = (tarih.getHours() > 9 || (tarih.getHours() === 9 && tarih.getMinutes() > 0));
+        
+        // Detaylarda hem o günün GİRİŞ hem de ÇIKIŞ işlemlerini gösterelim ki Erken çıkışları da görebilesin
+        if(tarih.toLocaleDateString('tr-TR') === bugun) {
+            
+            let isLate = (veri.durum_etiketi === "Geç Kaldı");
+            let isEarly = (veri.durum_etiketi === "Erken Çıktı");
+            
+            // Eğer kategori Geç Kalanlar ise ve bu kayıt geç kalma değilse atla
             if(kategori === "Geç Kalanlar" && !isLate) return;
+            // Bugün Gelenler listesinde Çıkışları da göstermek mantıklıdır, kişi ne zaman gelmiş ne zaman çıkmış görürüz
             
             const saatStr = tarih.getHours().toString().padStart(2, '0') + ":" + tarih.getMinutes().toString().padStart(2, '0');
             
-            // YENİ: Yönetici ekranında mazereti gösterme
             let nedenHtml = "";
-            if (isLate && veri.gecikme_nedeni) {
-                nedenHtml = `<div style="font-size: 12px; color: #555; margin-top: 8px; background: #fef2f2; padding: 8px; border-radius: 5px; border-left: 2px solid #ef4444;"><strong>Açıklama:</strong> ${veri.gecikme_nedeni}</div>`;
+            if ((isLate || isEarly) && veri.islem_notu) {
+                let borderRenk = isLate ? "#ef4444" : "#F97316";
+                nedenHtml = `<div style="font-size: 12px; color: #555; margin-top: 8px; background: #fef2f2; padding: 8px; border-radius: 5px; border-left: 2px solid ${borderRenk};"><strong>Açıklama:</strong> ${veri.islem_notu}</div>`;
             }
 
-            html += `<div class="list-item ${isLate ? 'late' : 'on-time'}">
+            let durumYazisi = "Zamanında";
+            let durumRengi = "#10b981";
+            let solBorder = "on-time";
+            
+            if (isLate) { durumYazisi = "Geç Kaldı"; durumRengi = "#ef4444"; solBorder = "late"; }
+            if (isEarly) { durumYazisi = "Erken Çıktı"; durumRengi = "#F97316"; solBorder = "late"; } // Erken çıkışları da turuncu gösterelim
+
+            html += `<div class="list-item ${solBorder}" ${isEarly ? 'style="border-left-color: #F97316;"' : ''}>
                     <strong>${veri.personel_tel}</strong> <span style="font-size:11px; color:#888;">(${veri.lokasyon})</span><br>
-                    <small>Giriş: ${saatStr}</small>
-                    <span style="float:right; color:${isLate ? '#ef4444':'#10b981'}; font-weight:bold;">${isLate?'Geç':'Zamanında'}</span>
+                    <small>${veri.islem_tipi}: ${saatStr}</small>
+                    <span style="float:right; color:${durumRengi}; font-weight:bold;">${durumYazisi}</span>
                     ${nedenHtml}
                 </div>`;
         }
     });
-    container.innerHTML = html || "<p>Kayıt bulunamadı.</p>";
+    container.innerHTML = html || "<p>Bu kategoriye uygun kayıt bulunamadı.</p>";
 };
