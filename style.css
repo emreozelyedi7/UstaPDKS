@@ -1,5 +1,12 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-body { background-color: #f4f7f9; }
+
+/* YENİ: Tarayıcının lastik gibi sünmesini ve kaydırarak çıkmayı zorlaştırır */
+body { 
+    background-color: #f4f7f9; 
+    overscroll-behavior-y: none; 
+    overscroll-behavior-x: none; 
+}
+
 .screen { display: none; min-height: 100vh; flex-direction: column; }
 .screen.active { display: flex; }
 
