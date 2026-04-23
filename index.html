@@ -91,6 +91,13 @@
                     <p class="card-title">Geç kalanlar</p>
                     <p class="card-desc">09:00'dan sonra girenler</p>
                 </div>
+                
+                <div class="admin-card" onclick="izinPlanlamaAc()" style="border-left: 4px solid #3b82f6;">
+                    <h2 style="color: #3b82f6;"><i class="fas fa-calendar-check"></i></h2>
+                    <p class="card-title">İzin Planlama</p>
+                    <p class="card-desc">Genel tatil veya personel izni</p>
+                </div>
+
                 <div class="admin-card" onclick="detayAc('Maaş Kesinti Raporu')" style="border-left: 4px solid #F97316;">
                     <h2 style="color: #F97316;"><i class="fas fa-calculator"></i></h2>
                     <p class="card-title">Kesinti Raporu</p>
@@ -116,12 +123,44 @@
             <i id="reason-icon" class="fas fa-clock" style="font-size: 40px; margin-bottom: 15px;"></i>
             <h3 id="reason-title" style="color: #1A365D; margin-bottom: 10px;">Bildirim</h3>
             <p id="reason-text" style="color: #555; font-size: 14px; margin-bottom: 15px; line-height: 1.4;"></p>
-            
             <textarea id="reason-input" placeholder="Lütfen nedenini kısaca belirtiniz..." style="width: 100%; height: 80px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; resize: none; margin-bottom: 15px; font-family: inherit; font-size: 14px; outline: none;"></textarea>
-            
             <div style="display: flex; gap: 10px;">
-                <button id="reason-skip-btn" style="flex: 1; padding: 12px; background: #e5e7eb; color: #4b5563; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">Boş Bırak</button>
-                <button id="reason-submit-btn" style="flex: 1; padding: 12px; background: #F97316; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">Kaydet</button>
+                <button id="reason-skip-btn" style="flex: 1; padding: 12px; background: #e5e7eb; color: #4b5563; border: none; border-radius: 8px; font-weight: bold; font-size: 14px;">Boş Bırak</button>
+                <button id="reason-submit-btn" style="flex: 1; padding: 12px; background: #F97316; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="leave-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10002; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="color: #1A365D; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;"><i class="fas fa-calendar-plus"></i> İzin / Tatil Planla</h3>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 4px; display: block;">İzin Başlangıç Tarihi</label>
+                <input type="date" id="leave-start-date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 4px; display: block;">İzin Bitiş Tarihi</label>
+                <input type="date" id="leave-end-date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 4px; display: block;">Kime Uygulanacak?</label>
+                <select id="leave-target-type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none;" onchange="togglePersonSelect()">
+                    <option value="Tümü">🏢 Tüm Personel (Şirket Tatili)</option>
+                    <option value="Kişi Seç">👤 Belirli Bir Kişiye</option>
+                </select>
+            </div>
+
+            <div id="leave-person-container" style="margin-bottom: 20px; display: none;">
+                <label style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 4px; display: block;">Personel Seçin</label>
+                <select id="leave-person-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none;"></select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="document.getElementById('leave-modal').style.display='none'" style="flex: 1; padding: 12px; background: #e5e7eb; color: #4b5563; border: none; border-radius: 8px; font-weight: bold;">İptal</button>
+                <button id="save-leave-btn" style="flex: 1; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold;">İzni Kaydet</button>
             </div>
         </div>
     </div>
