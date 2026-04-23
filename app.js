@@ -19,9 +19,10 @@ const db = getFirestore(app);
 // ================= AYARLAR =================
 const ADMIN_PHONE = "5324328072"; 
 
+// GÜNCEL PERSONEL REHBERİ
 const personelRehberi = {
-    "5324328072": "Emre Özel",
-    "5551234567": "Test Personel"
+    "5324328072": "Emre Özel İş",
+    "5419604133": "Emre Özel"
 };
 
 const ismeCevir = (telefonNumarasi) => { return personelRehberi[telefonNumarasi] || telefonNumarasi; };
@@ -340,7 +341,7 @@ window.detayAc = (kategori) => {
     container.innerHTML = html || "<p>Kayıt bulunamadı.</p>";
 };
 
-// ================= İZİN PLANLAMA (YENİ) =================
+// ================= İZİN PLANLAMA =================
 window.izinPlanlamaAc = () => {
     document.getElementById('leave-modal').style.display = 'flex';
     document.getElementById('leave-start-date').value = "";
@@ -348,13 +349,11 @@ window.izinPlanlamaAc = () => {
     document.getElementById('leave-target-type').value = "Tümü";
     document.getElementById('leave-person-container').style.display = 'none';
 
-    // Rehberi select kutusuna bas
+    // Rehberi select kutusuna bas (Admin numarası dahil hepsi gelir)
     const personSelect = document.getElementById('leave-person-select');
     personSelect.innerHTML = "";
     for (let tel in personelRehberi) {
-        if(tel !== ADMIN_PHONE) { // Yöneticiyi izne çıkarmaya gerek yok :)
-            personSelect.innerHTML += `<option value="${tel}">${personelRehberi[tel]} (${tel})</option>`;
-        }
+        personSelect.innerHTML += `<option value="${tel}">${personelRehberi[tel]} (${tel})</option>`;
     }
 };
 
