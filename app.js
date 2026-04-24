@@ -46,8 +46,14 @@ const detailScreen = document.getElementById('detail-screen');
 const reportsScreen = document.getElementById('reports-screen');
 const leavesScreen = document.getElementById('leaves-screen');
 const locationFilter = document.getElementById('location-filter');
+
 let tumHareketlerCache = [];
 let sonFiltrelenmisRapor = []; 
+
+// YENİ: Merkezileştirilmiş Ekran Kapatıcı (Çakışmaları Engeller)
+const tumEkranlariKapat = () => {
+    [dashboardScreen, adminDashboardScreen, detailScreen, reportsScreen, leavesScreen].forEach(s => s?.classList.remove('active'));
+};
 
 window.toggleSidebar = () => {
     document.getElementById('sidebar')?.classList.toggle('-translate-x-full');
@@ -57,8 +63,15 @@ window.toggleSidebar = () => {
 window.anaEkranaDon = () => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
-    [detailScreen, leavesScreen, reportsScreen].forEach(s => s?.classList.remove('active'));
-    adminDashboardScreen?.classList.add('active');
+    
+    tumEkranlariKapat();
+    
+    const p = auth.currentUser?.email.split('@')[0];
+    if(p && ADMIN_PHONES.includes(p)) {
+        adminDashboardScreen?.classList.add('active');
+    } else {
+        dashboardScreen?.classList.add('active');
+    }
 };
 window.addEventListener('popstate', anaEkranaDon);
 
@@ -85,7 +98,6 @@ const adminVerileriniHesapla = async () => {
         if(document.getElementById('count-gelenler')) document.getElementById('count-gelenler').innerText = gelenler.size;
         if(document.getElementById('count-geckalanlar')) document.getElementById('count-geckalanlar').innerText = gecenler.size;
         
-        // YENİ: Gelmeyenler Sayısını Dinamik Hesapla
         const toplamPersonel = Object.keys(personelRehberi).length;
         const gelmeyenSayisi = toplamPersonel - gelenler.size;
         if(document.getElementById('count-gelmeyenler')) {
@@ -283,12 +295,17 @@ onAuthStateChanged(auth, (u) => {
         const isAdmin = ADMIN_PHONES.includes(p); 
         if(isAdmin) {
             if(document.getElementById('admin-welcome-text')) document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
+            tumEkranlariKapat();
             adminDashboardScreen?.classList.add('active'); adminVerileriniHesapla(); arayuzDurumuGuncelle(p, true);
         } else {
             if(document.getElementById('welcome-text')) document.getElementById('welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
+            tumEkranlariKapat();
             dashboardScreen?.classList.add('active'); arayuzDurumuGuncelle(p, false);
         }
-    } else { loginScreen?.classList.add('active'); [adminDashboardScreen, dashboardScreen, reportsScreen, leavesScreen, detailScreen].forEach(s => s?.classList.remove('active')); }
+    } else { 
+        tumEkranlariKapat();
+        loginScreen?.classList.add('active'); 
+    }
 });
 
 document.getElementById('login-btn')?.addEventListener('click', () => {
@@ -300,10 +317,10 @@ document.getElementById('login-btn')?.addEventListener('click', () => {
 
 document.getElementById('logout-btn')?.addEventListener('click', () => signOut(auth));
 document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => signOut(auth));
-document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
-document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
 document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
 
 // ================= YENİ: "GELMEYENLER" EKRANI MANTIĞI =================
@@ -311,7 +328,9 @@ window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
     if(document.getElementById('detail-title')) document.getElementById('detail-title').innerText = k;
-    adminDashboardScreen?.classList.remove('active'); detailScreen?.classList.add('active');
+    
+    tumEkranlariKapat();
+    detailScreen?.classList.add('active');
     history.pushState({ ekran: 'detay' }, '', '#detay');
     
     const container = document.getElementById('detail-list-container');
@@ -359,7 +378,7 @@ window.detayAc = (k) => {
             });
         }
         if(container) container.innerHTML = html;
-        return; // Alt kodlara geçmemesi için burada durduruyoruz
+        return; 
     }
 
     // BUGÜN GELENLER VE GEÇ KALANLAR İŞLEMİ
@@ -400,7 +419,7 @@ window.detayAc = (k) => {
     if(container) container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-folder-open text-3xl mb-3 opacity-50 block"></i>Kayıt bulunamadı.</div>`;
 };
 
-// İZİN YÖNETİMİ (Önceki işlevler korundu)
+// İZİN YÖNETİMİ 
 window.izinPlanlamaAc = () => { document.getElementById('sidebar')?.classList.add('-translate-x-full'); document.getElementById('sidebar-overlay')?.classList.add('hidden'); document.getElementById('leave-modal')?.classList.remove('hidden'); const ps = document.getElementById('leave-person-select'); if(ps) { ps.innerHTML = ""; for(let t in personelRehberi) ps.innerHTML += `<option value="${t}">${personelRehberi[t]}</option>`; } };
 window.togglePersonSelect = () => { document.getElementById('leave-person-container')?.classList.toggle('hidden', document.getElementById('leave-target-type')?.value === "Tümü"); };
 document.getElementById('save-leave-btn')?.addEventListener('click', async () => { 
@@ -410,8 +429,30 @@ document.getElementById('save-leave-btn')?.addEventListener('click', async () =>
     const btn = document.getElementById('save-leave-btn');
     try { await addDoc(collection(db, "izinler"), { baslangic_tarihi: baslangic, bitis_tarihi: bitis, izin_hedefi: hedef, isleyen_yonetici: auth.currentUser.email.split('@')[0], olusturulma: serverTimestamp() }); alert(`✅ İzin oluşturuldu!`); document.getElementById('leave-modal')?.classList.add('hidden'); } catch (e) { alert("Hata!"); }
 });
+
+window.raporEkraniAc = () => {
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    
+    tumEkranlariKapat();
+    reportsScreen?.classList.add('active');
+    
+    // YENİ: Tarih kutularının iOS/Android uyumlu çalışması için düzeltildi
+    const bugunISO = new Date().toISOString().split('T')[0];
+    if(document.getElementById('report-start-date')) document.getElementById('report-start-date').value = bugunISO;
+    if(document.getElementById('report-end-date')) document.getElementById('report-end-date').value = bugunISO;
+    
+    history.pushState({ ekran: 'raporlar' }, '', '#raporlar');
+};
+
 window.planlananIzinleriAc = async () => {
-    document.getElementById('sidebar')?.classList.add('-translate-x-full'); document.getElementById('sidebar-overlay')?.classList.add('hidden'); adminDashboardScreen?.classList.remove('active'); leavesScreen?.classList.add('active'); history.pushState({ ekran: 'izinler' }, '', '#izinler');
+    document.getElementById('sidebar')?.classList.add('-translate-x-full'); 
+    document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
+    
+    tumEkranlariKapat();
+    leavesScreen?.classList.add('active'); 
+    history.pushState({ ekran: 'izinler' }, '', '#izinler');
+    
     const container = document.getElementById('leaves-list-container'); if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-spinner fa-spin mr-3"></i>Yükleniyor...</div>';
     try {
         const snap = await getDocs(query(collection(db, "izinler"))); let html = "";
