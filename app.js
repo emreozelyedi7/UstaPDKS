@@ -83,6 +83,27 @@ window.anaEkranaDon = () => {
 };
 window.addEventListener('popstate', anaEkranaDon);
 
+// ================= YENİ: SİSTEMİ ZORLA GÜNCELLEME (CACHE BUSTER) =================
+window.sistemiGuncelle = () => {
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    
+    const overlay = document.getElementById('loading-overlay');
+    if(overlay) {
+        overlay.classList.remove('hidden');
+        document.getElementById('loading-icon').className = "fas fa-sync fa-spin text-5xl mb-4 text-emerald-400";
+        document.getElementById('loading-text-1').innerText = "Sistem Yenileniyor...";
+        document.getElementById('loading-text-2').innerText = "En güncel sürüm indiriliyor, lütfen bekleyin.";
+    }
+    
+    setTimeout(() => {
+        // Tarayıcıyı kandırmak için URL'nin sonuna anlık saati ekliyoruz
+        // Bu sayede Safari "Bu yeni bir sayfa" sanıp önbellekteki eski kodu silip yenisini çeker.
+        const yeniUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + new Date().getTime();
+        window.location.href = yeniUrl;
+    }, 1000);
+};
+
 // ================= YÖNETİCİ VE PERSONEL GÖRÜNÜMÜ =================
 const adminVerileriniHesapla = async () => {
     try {
@@ -152,15 +173,18 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
 
 // ================= GPS VE İŞLEM MANTIĞI =================
 let beklemedekiK = null; let aktifIslemTipi = "";
-
-const islemBaslat = (tip) => { 
-    aktifIslemTipi = tip; 
-    document.getElementById('branch-modal')?.classList.remove('hidden'); 
-};
+const islemBaslat = (tip) => { aktifIslemTipi = tip; document.getElementById('branch-modal')?.classList.remove('hidden'); };
 
 window.gpsKonumDogrula = (loc) => {
     document.getElementById('branch-modal')?.classList.add('hidden');
-    document.getElementById('loading-overlay')?.classList.remove('hidden');
+    const overlay = document.getElementById('loading-overlay');
+    if(overlay) {
+        overlay.classList.remove('hidden');
+        document.getElementById('loading-icon').className = "fas fa-map-marker-alt text-5xl mb-4 animate-bounce text-brand-orange";
+        document.getElementById('loading-text-1').innerText = "Konumunuz Doğrulanıyor...";
+        document.getElementById('loading-text-2').innerText = "Lütfen bekleyiniz";
+    }
+    
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
             const dist = mesafeHesapla(pos.coords.latitude, pos.coords.longitude, subeKonumlari[loc].lat, subeKonumlari[loc].lng);
@@ -284,7 +308,7 @@ window.raporVerileriniGetir = async () => {
             });
         }
         if(container) container.innerHTML = html;
-    } catch(e) { if(container) container.innerHTML = '<div class="text-red-500 font-bold">Hata oluştu!</div>'; }
+    } catch(e) { console.log(e); }
 };
 
 window.excelIndir = () => {
@@ -308,7 +332,7 @@ window.excelIndir = () => {
     XLSX.writeFile(workbook, `PDKS_Rapor_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
 };
 
-// ================= YENİ: "GELMEYENLER" EKRANI MANTIĞI =================
+// ================= YENİ: "GELMEYENLER" EKRANI AKILLI MANTIĞI =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -492,9 +516,9 @@ document.getElementById('login-btn')?.addEventListener('click', () => {
 
 document.getElementById('logout-btn')?.addEventListener('click', () => signOut(auth));
 document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => signOut(auth));
-document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
-document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
 document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 
 if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
