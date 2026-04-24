@@ -16,17 +16,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ================= AYARLAR =================
+// ================= AYARLAR VE REHBER =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
-// REHBER
 const personelRehberi = { 
     "5324328072": "Emre Özel İş", 
     "5419604133": "Emre Özel",
     "5327097461": "Volkan Usta" 
 };
 
-// YENİ: KİM HANGİ ŞUBENİN ÇALIŞANI?
 const personelSubeleri = {
     "5324328072": "Pendik Şube",
     "5419604133": "Atölye",
@@ -108,17 +106,12 @@ const adminVerileriniHesapla = async () => {
         if(document.getElementById('count-gelenler')) document.getElementById('count-gelenler').innerText = gelenler.size;
         if(document.getElementById('count-geckalanlar')) document.getElementById('count-geckalanlar').innerText = gecenler.size;
         
-        // YENİ: Şubeye Göre Akıllı Gelmeyen Hesaplaması
         let beklenenPersonelSayisi = 0;
         let gelenKendiSubesinde = 0;
-
         for (let tel in personelSubeleri) {
-            // Eğer "Tümü" seçiliyse veya personelin atandığı şube seçili filtreye uyuyorsa onu "Beklenen" listesine al
             if (seciliSube === "Tümü" || personelSubeleri[tel] === seciliSube) {
                 beklenenPersonelSayisi++;
-                if (gelenler.has(tel)) {
-                    gelenKendiSubesinde++;
-                }
+                if (gelenler.has(tel)) gelenKendiSubesinde++;
             }
         }
         
@@ -126,7 +119,6 @@ const adminVerileriniHesapla = async () => {
         if(document.getElementById('count-gelmeyenler')) {
             document.getElementById('count-gelmeyenler').innerText = gelmeyenSayisi < 0 ? 0 : gelmeyenSayisi;
         }
-
     } catch (e) { console.log(e); }
 };
 
@@ -160,7 +152,11 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
 
 // ================= GPS VE İŞLEM MANTIĞI =================
 let beklemedekiK = null; let aktifIslemTipi = "";
-const islemBaslat = (tip) => { aktifIslemTipi = tip; document.getElementById('branch-modal')?.classList.remove('hidden'); };
+
+const islemBaslat = (tip) => { 
+    aktifIslemTipi = tip; 
+    document.getElementById('branch-modal')?.classList.remove('hidden'); 
+};
 
 window.gpsKonumDogrula = (loc) => {
     document.getElementById('branch-modal')?.classList.add('hidden');
@@ -217,13 +213,14 @@ window.raporVerileriniGetir = async () => {
     const startStr = document.getElementById('report-start-date')?.value;
     const endStr = document.getElementById('report-end-date')?.value;
     const onlyLate = document.getElementById('only-late-checkbox')?.checked;
+    
     if(!startStr || !endStr) return alert("Tarihleri seçin!");
 
     const startD = new Date(startStr); startD.setHours(0,0,0,0);
     const endD = new Date(endStr); endD.setHours(23,59,59,999);
 
     const container = document.getElementById('reports-list-container');
-    container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-sync fa-spin mr-3 text-emerald-500"></i>Veriler Çekiliyor...</div>';
+    if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-sync fa-spin mr-3 text-emerald-500"></i>Veriler Çekiliyor...</div>';
 
     try {
         const snap = await getDocs(collection(db, "hareketler"));
@@ -286,8 +283,8 @@ window.raporVerileriniGetir = async () => {
                 html += `</div></div>`;
             });
         }
-        container.innerHTML = html;
-    } catch(e) { console.log(e); }
+        if(container) container.innerHTML = html;
+    } catch(e) { if(container) container.innerHTML = '<div class="text-red-500 font-bold">Hata oluştu!</div>'; }
 };
 
 window.excelIndir = () => {
@@ -311,42 +308,7 @@ window.excelIndir = () => {
     XLSX.writeFile(workbook, `PDKS_Rapor_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
 };
 
-// ================= OTURUM VE DİĞERLERİ =================
-onAuthStateChanged(auth, (u) => {
-    if (u) {
-        loginScreen?.classList.remove('active'); const p = u.email.split('@')[0];
-        const isAdmin = ADMIN_PHONES.includes(p); 
-        if(isAdmin) {
-            if(document.getElementById('admin-welcome-text')) document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
-            tumEkranlariKapat();
-            adminDashboardScreen?.classList.add('active'); adminVerileriniHesapla(); arayuzDurumuGuncelle(p, true);
-        } else {
-            if(document.getElementById('welcome-text')) document.getElementById('welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
-            tumEkranlariKapat();
-            dashboardScreen?.classList.add('active'); arayuzDurumuGuncelle(p, false);
-        }
-    } else { 
-        tumEkranlariKapat();
-        loginScreen?.classList.add('active'); 
-    }
-});
-
-document.getElementById('login-btn')?.addEventListener('click', () => {
-    const p = document.getElementById('phone-input')?.value; const s = document.getElementById('password-input')?.value;
-    if(!p || !s) return alert("Bilgileri girin!");
-    const b = document.getElementById('login-btn'); if(b) b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
-    signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => { if(b) b.innerHTML='Giriş Yap'; alert("Hata!"); });
-});
-
-document.getElementById('logout-btn')?.addEventListener('click', () => signOut(auth));
-document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => signOut(auth));
-document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
-document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
-document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
-document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
-if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
-
-// ================= YENİ: "GELMEYENLER" EKRANI AKILLI MANTIĞI =================
+// ================= YENİ: "GELMEYENLER" EKRANI MANTIĞI =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -360,7 +322,6 @@ window.detayAc = (k) => {
     const filter = locationFilter?.value || "Tümü";
     let html = ""; const bugun = new Date().toLocaleDateString('tr-TR');
     
-    // GELMEYENLER ÖZEL İŞLEMİ (Rehber ve Şube Zekası)
     if (k === 'Bugün Gelmeyenler') {
         let gelenlerBugun = new Set();
         tumHareketlerCache.forEach(v => {
@@ -374,9 +335,7 @@ window.detayAc = (k) => {
         let gelmeyenler = [];
         for (let tel in personelSubeleri) {
             const atanmisSube = personelSubeleri[tel];
-            // Eğer "Tümü" seçiliyse VEYA personelin kendi şubesi seçiliyse listeye dahil et
             if (filter === "Tümü" || filter === atanmisSube) {
-                // Ve eğer bugün hiç giriş yapmamışsa
                 if (!gelenlerBugun.has(tel)) {
                     gelmeyenler.push(tel);
                 }
@@ -408,10 +367,9 @@ window.detayAc = (k) => {
             });
         }
         if(container) container.innerHTML = html;
-        return; // İşlem bitti, alt kodlara inmesine gerek yok
+        return; 
     }
 
-    // BUGÜN GELENLER VE GEÇ KALANLAR İŞLEMİ
     tumHareketlerCache.sort((a,b) => b.tarih_saat?.toMillis() - a.tarih_saat?.toMillis());
     tumHareketlerCache.forEach(v => {
         if(!v.tarih_saat) return;
@@ -449,26 +407,94 @@ window.detayAc = (k) => {
     if(container) container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-folder-open text-3xl mb-3 opacity-50 block"></i>Kayıt bulunamadı.</div>`;
 };
 
-// İZİN YÖNETİMİ 
-window.izinPlanlamaAc = () => { document.getElementById('sidebar')?.classList.add('-translate-x-full'); document.getElementById('sidebar-overlay')?.classList.add('hidden'); document.getElementById('leave-modal')?.classList.remove('hidden'); const ps = document.getElementById('leave-person-select'); if(ps) { ps.innerHTML = ""; for(let t in personelRehberi) ps.innerHTML += `<option value="${t}">${personelRehberi[t]}</option>`; } };
+// ================= EKRAN AÇILIŞ FONKSİYONLARI =================
+window.raporEkraniAc = () => {
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    
+    tumEkranlariKapat();
+    reportsScreen?.classList.add('active');
+    
+    const bugunISO = new Date().toISOString().split('T')[0];
+    if(document.getElementById('report-start-date')) document.getElementById('report-start-date').value = bugunISO;
+    if(document.getElementById('report-end-date')) document.getElementById('report-end-date').value = bugunISO;
+    
+    history.pushState({ ekran: 'raporlar' }, '', '#raporlar');
+};
+
+window.izinPlanlamaAc = () => { 
+    document.getElementById('sidebar')?.classList.add('-translate-x-full'); 
+    document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
+    document.getElementById('leave-modal')?.classList.remove('hidden'); 
+    const ps = document.getElementById('leave-person-select'); 
+    if(ps) { ps.innerHTML = ""; for(let t in personelRehberi) ps.innerHTML += `<option value="${t}">${personelRehberi[t]}</option>`; } 
+};
+
+window.planlananIzinleriAc = async () => {
+    document.getElementById('sidebar')?.classList.add('-translate-x-full'); 
+    document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
+    
+    tumEkranlariKapat(); 
+    leavesScreen?.classList.add('active'); 
+    history.pushState({ ekran: 'izinler' }, '', '#izinler');
+    
+    const container = document.getElementById('leaves-list-container'); 
+    if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-spinner fa-spin mr-3"></i>Yükleniyor...</div>';
+    
+    try {
+        const snap = await getDocs(query(collection(db, "izinler"))); let html = "";
+        let izinler = [];
+        snap.forEach(doc => izinler.push(doc.data()));
+        izinler.sort((a,b) => new Date(b.baslangic_tarihi) - new Date(a.baslangic_tarihi));
+        
+        izinler.forEach(izin => {
+            const isT = izin.izin_hedefi === "Tümü";
+            html += `<div class="p-5 rounded-2xl shadow-sm border-l-4 ${isT?'bg-blue-50 border-blue-500':'bg-white border-brand-orange'} relative overflow-hidden mb-3"><h4 class="font-bold text-brand-navy text-sm">${isT ? "🏢 Tüm Şirket" : `👤 ${ismeCevir(izin.izin_hedefi)}`}</h4><div class="flex items-center text-xs text-slate-600 font-medium mt-2 bg-white/60 p-2 rounded-lg border border-slate-100"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> ${izin.baslangic_tarihi.split('-').reverse().join('.')} - ${izin.bitis_tarihi.split('-').reverse().join('.')}</div></div>`;
+        });
+        if(container) container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-calendar-times text-3xl mb-3 opacity-50 block"></i>Planlanmış izin bulunmuyor.</div>`;
+    } catch(e) { if(container) container.innerHTML = "Hata oluştu."; }
+};
+
+// ================= OLAY DİNLEYİCİLERİ =================
 window.togglePersonSelect = () => { document.getElementById('leave-person-container')?.classList.toggle('hidden', document.getElementById('leave-target-type')?.value === "Tümü"); };
+
 document.getElementById('save-leave-btn')?.addEventListener('click', async () => { 
     const baslangic = document.getElementById('leave-start-date')?.value; const bitis = document.getElementById('leave-end-date')?.value; const tur = document.getElementById('leave-target-type')?.value;
     if (!baslangic || !bitis) return alert("Tarih seçin!");
     let hedef = tur === "Kişi Seç" ? document.getElementById('leave-person-select')?.value : "Tümü";
     const btn = document.getElementById('save-leave-btn');
-    try { await addDoc(collection(db, "izinler"), { baslangic_tarihi: baslangic, bitis_tarihi: bitis, izin_hedefi: hedef, isleyen_yonetici: auth.currentUser.email.split('@')[0], olusturulma: serverTimestamp() }); alert(`✅ İzin oluşturuldu!`); document.getElementById('leave-modal')?.classList.add('hidden'); } catch (e) { alert("Hata!"); }
+    const oldText = btn ? btn.innerText : ''; if(btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    try { await addDoc(collection(db, "izinler"), { baslangic_tarihi: baslangic, bitis_tarihi: bitis, izin_hedefi: hedef, isleyen_yonetici: auth.currentUser.email.split('@')[0], olusturulma: serverTimestamp() }); if(btn) btn.innerHTML = oldText; alert(`✅ İzin oluşturuldu!`); document.getElementById('leave-modal')?.classList.add('hidden'); if(leavesScreen?.classList.contains('active')) window.planlananIzinleriAc(); } catch (e) { if(btn) btn.innerHTML = oldText; alert("Hata!"); }
 });
-window.planlananIzinleriAc = async () => {
-    document.getElementById('sidebar')?.classList.add('-translate-x-full'); document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
-    tumEkranlariKapat(); leavesScreen?.classList.add('active'); history.pushState({ ekran: 'izinler' }, '', '#izinler');
-    const container = document.getElementById('leaves-list-container'); if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-spinner fa-spin mr-3"></i>Yükleniyor...</div>';
-    try {
-        const snap = await getDocs(query(collection(db, "izinler"))); let html = "";
-        snap.forEach(doc => {
-            const izin = doc.data(); const isT = izin.izin_hedefi === "Tümü";
-            html += `<div class="p-5 rounded-2xl shadow-sm border-l-4 ${isT?'bg-blue-50 border-blue-500':'bg-white border-brand-orange'} relative overflow-hidden mb-3"><h4 class="font-bold text-brand-navy text-sm">${isT ? "🏢 Tüm Şirket" : `👤 ${ismeCevir(izin.izin_hedefi)}`}</h4><div class="flex items-center text-xs text-slate-600 font-medium mt-2 bg-white/60 p-2 rounded-lg border border-slate-100"><i class="far fa-calendar-alt text-blue-500 mr-2"></i> ${izin.baslangic_tarihi.split('-').reverse().join('.')} - ${izin.bitis_tarihi.split('-').reverse().join('.')}</div></div>`;
-        });
-        if(container) container.innerHTML = html || "İzin bulunmuyor.";
-    } catch(e) { }
-};
+
+onAuthStateChanged(auth, (u) => {
+    if (u) {
+        loginScreen?.classList.remove('active'); const p = u.email.split('@')[0];
+        const isAdmin = ADMIN_PHONES.includes(p); 
+        if(isAdmin) {
+            if(document.getElementById('admin-welcome-text')) document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
+            tumEkranlariKapat();
+            adminDashboardScreen?.classList.add('active'); adminVerileriniHesapla(); arayuzDurumuGuncelle(p, true);
+        } else {
+            if(document.getElementById('welcome-text')) document.getElementById('welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
+            tumEkranlariKapat();
+            dashboardScreen?.classList.add('active'); arayuzDurumuGuncelle(p, false);
+        }
+    } else { tumEkranlariKapat(); loginScreen?.classList.add('active'); }
+});
+
+document.getElementById('login-btn')?.addEventListener('click', () => {
+    const p = document.getElementById('phone-input')?.value; const s = document.getElementById('password-input')?.value;
+    if(!p || !s) return alert("Bilgileri girin!");
+    const b = document.getElementById('login-btn'); if(b) b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+    signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => { if(b) b.innerHTML='Giriş Yap'; alert("Hata!"); });
+});
+
+document.getElementById('logout-btn')?.addEventListener('click', () => signOut(auth));
+document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => signOut(auth));
+document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+
+if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
