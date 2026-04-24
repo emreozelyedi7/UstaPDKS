@@ -12,6 +12,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -50,18 +52,12 @@
             <button onclick="izinPlanlamaAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
                 <i class="fas fa-calendar-plus text-lg text-slate-400 w-6 text-center"></i> Yeni İzin Planla
             </button>
-            
-            <div class="my-4 border-t border-slate-100"></div>
-            
-            <button class="w-full flex items-center gap-4 p-4 text-left font-medium text-slate-400 rounded-2xl cursor-default opacity-60">
-                <i class="fas fa-chart-line text-lg w-6 text-center"></i> 
-                <div><span class="block text-[10px] text-brand-orange font-bold uppercase tracking-wider">Yakında</span>Performans Analizi</div>
-            </button>
         </div>
         <div class="p-6 border-t border-slate-100 bg-slate-50">
             <button id="sidebar-logout-btn" class="w-full py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold active:bg-slate-100 transition-colors shadow-sm text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sistemden Çıkış</button>
         </div>
     </div>
+
     <div id="login-screen" class="screen active justify-center items-center p-4">
         <div class="bg-white p-10 rounded-[2.5rem] w-full max-w-sm shadow-xl border border-slate-100 text-center">
             <img src="logo.png" alt="Logo" class="w-3/5 mx-auto mb-4">
@@ -174,9 +170,13 @@
                 <div class="space-y-4">
                     <label class="flex items-center gap-3 cursor-pointer p-2 select-none">
                         <input type="checkbox" id="only-late-checkbox" class="w-5 h-5 rounded accent-red-500">
-                        <span class="text-sm font-bold text-slate-600">Sadece Geç Kalanları/Erken Çıkanları Göster</span>
+                        <span class="text-sm font-bold text-slate-600">Sadece Geç/Erken Kayıtlar</span>
                     </label>
-                    <button onclick="raporVerileriniGetir()" class="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">SORGULA</button>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="raporVerileriniGetir()" class="flex-[2] py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 active:scale-95 transition-all uppercase tracking-widest text-sm">SORGULA</button>
+                        <button id="excel-btn" onclick="excelIndir()" class="hidden flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-all flex items-center justify-center"><i class="fas fa-file-excel text-xl"></i></button>
+                    </div>
                 </div>
             </div>
             <div id="reports-list-container" class="space-y-4"></div>
