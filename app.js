@@ -19,7 +19,6 @@ const db = getFirestore(app);
 // ================= AYARLAR =================
 const ADMIN_PHONE = "5324328072"; 
 
-// GÜNCEL PERSONEL REHBERİ
 const personelRehberi = {
     "5324328072": "Emre Özel İş",
     "5419604133": "Emre Özel"
@@ -49,8 +48,8 @@ const mesafeHesapla = (lat1, lon1, lat2, lon2) => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c; 
 };
-// ============================================
 
+// ================= EKRAN YÖNETİMİ =================
 const loginScreen = document.getElementById('login-screen');
 const dashboardScreen = document.getElementById('dashboard-screen');
 const adminDashboardScreen = document.getElementById('admin-dashboard-screen');
@@ -118,12 +117,15 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     const btnCikis = document.getElementById(`${prefix}btn-cikis`);
     const badge = document.getElementById(`${prefix}status-badge`);
 
+    // Tailwind Classlar ile Dinamik Badge Güncelleme
     if(son === "Giriş") {
-        btnGiris.style.display="none"; btnCikis.style.display= isAdmin ? "flex" : "block";
-        badge.innerText="MESAİDE"; badge.style.background="#D1FAE5"; badge.style.color="#065F46";
+        btnGiris.style.display="none"; btnCikis.style.display= isAdmin ? "flex" : "flex";
+        badge.innerText="MESAİDE"; 
+        badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200";
     } else {
-        btnGiris.style.display= isAdmin ? "flex" : "block"; btnCikis.style.display="none";
-        badge.innerText="MESAİ DIŞI"; badge.style.background="#FEE2E2"; badge.style.color="#991B1B";
+        btnGiris.style.display= isAdmin ? "flex" : "flex"; btnCikis.style.display="none";
+        badge.innerText="MESAİ DIŞI"; 
+        badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-600 border border-red-200";
     }
 };
 
@@ -228,13 +230,11 @@ const kamerayiAc = (tip) => {
                                 beklemedekiKayıt = { tip, loc, islemTuru, farkDakika };
                                 document.getElementById('reason-input').value = ""; 
                                 if (islemTuru === "Gecikme") {
-                                    document.getElementById('reason-icon').className = "fas fa-clock";
-                                    document.getElementById('reason-icon').style.color = "#ef4444";
+                                    document.getElementById('reason-icon').className = "fas fa-clock text-red-500";
                                     document.getElementById('reason-title').innerText = "Gecikme Bildirimi";
                                     document.getElementById('reason-text').innerText = `Sayın ${isim}, mesaiye ${farkDakika} dakika geç kaldınız. Lütfen geç kalma nedeninizi kısaca belirtebilirsiniz.`;
                                 } else {
-                                    document.getElementById('reason-icon').className = "fas fa-door-open";
-                                    document.getElementById('reason-icon').style.color = "#F97316";
+                                    document.getElementById('reason-icon').className = "fas fa-door-open text-brand-orange";
                                     document.getElementById('reason-title').innerText = "Erken Çıkış Bildirimi";
                                     document.getElementById('reason-text').innerText = `Sayın ${isim}, mesai bitişinden ${farkDakika} dakika önce çıkış yapıyorsunuz. Lütfen nedenini belirtin.`;
                                 }
@@ -285,7 +285,15 @@ onAuthStateChanged(auth, (user) => {
 document.getElementById('login-btn').addEventListener('click', () => {
     const p = document.getElementById('phone-input').value;
     const s = document.getElementById('password-input').value;
-    signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => alert("Hatalı Giriş!"));
+    if(!p || !s) return alert("Lütfen bilgileri girin!");
+    
+    const btn = document.getElementById('login-btn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Yükleniyor efekti
+    
+    signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => {
+        btn.innerHTML = 'Giriş Yap';
+        alert("Hatalı Giriş!");
+    });
 });
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 document.getElementById('admin-logout-btn').addEventListener('click', () => signOut(auth));
@@ -299,46 +307,70 @@ document.getElementById('cancel-camera-btn').addEventListener('click', () => {
 });
 locationFilter.addEventListener('change', adminVerileriniHesapla);
 
+// Modern UI Liste Çıktısı (Tailwind Sınıfları ile)
 window.detayAc = (kategori) => {
     document.getElementById('detail-title').innerText = kategori;
     adminDashboardScreen.classList.remove('active');
     detailScreen.classList.add('active');
     history.pushState({ ekran: 'detay' }, '', '#detay');
+    
     const container = document.getElementById('detail-list-container');
     const seciliSube = locationFilter.value;
     let html = "";
     const bugun = new Date().toLocaleDateString('tr-TR');
+    
     tumHareketlerCache.sort((a, b) => (b.tarih_saat?.toMillis() || 0) - (a.tarih_saat?.toMillis() || 0));
     tumHareketlerCache.forEach(veri => {
         if(!veri.tarih_saat) return;
         if(seciliSube !== "Tümü" && veri.lokasyon !== seciliSube) return;
+        
         const tarih = veri.tarih_saat.toDate();
         if(tarih.toLocaleDateString('tr-TR') === bugun) {
             let isLate = (veri.durum_etiketi === "Geç Kaldı");
             let isEarly = (veri.durum_etiketi === "Erken Çıktı");
+            
             if(kategori === "Geç Kalanlar" && !isLate) return;
+            
             const saatStr = tarih.getHours().toString().padStart(2, '0') + ":" + tarih.getMinutes().toString().padStart(2, '0');
+            
+            // Tailwind Renk/Border Mantığı
+            let durumYazisi = "Zamanında";
+            let txtColor = "text-emerald-600";
+            let borderColor = "border-emerald-500";
+            
+            if (isLate) { durumYazisi = "Geç Kaldı"; txtColor = "text-red-500"; borderColor = "border-red-500"; }
+            if (isEarly) { durumYazisi = "Erken Çıktı"; txtColor = "text-orange-500"; borderColor = "border-orange-500"; }
+
             let nedenHtml = "";
             if ((isLate || isEarly) && veri.islem_notu) {
-                let borderRenk = isLate ? "#ef4444" : "#F97316";
-                nedenHtml = `<div style="font-size: 12px; color: #555; margin-top: 8px; background: #fef2f2; padding: 8px; border-radius: 5px; border-left: 2px solid ${borderRenk};"><strong>Açıklama:</strong> ${veri.islem_notu}</div>`;
+                let bgRenk = isLate ? "bg-red-50" : "bg-orange-50";
+                nedenHtml = `<div class="mt-3 p-3 rounded-xl border-l-2 ${borderColor} ${bgRenk} text-xs text-slate-600 font-medium">
+                                <strong class="text-slate-800">Açıklama:</strong> ${veri.islem_notu}
+                             </div>`;
             }
-            let durumYazisi = "Zamanında";
-            let durumRengi = "#10b981";
-            let solBorder = "on-time";
-            if (isLate) { durumYazisi = "Geç Kaldı"; durumRengi = "#ef4444"; solBorder = "late"; }
-            if (isEarly) { durumYazisi = "Erken Çıktı"; durumRengi = "#F97316"; solBorder = "late"; }
+
             let gosterilecekIsim = ismeCevir(veri.personel_tel);
-            html += `<div class="list-item ${solBorder}" ${isEarly ? 'style="border-left-color: #F97316;"' : ''}>
-                    <strong>${gosterilecekIsim}</strong> <span style="font-size:11px; color:#888;">(${veri.lokasyon})</span><br>
-                    <small style="color:#777; font-size:11px;">Tel: ${veri.personel_tel}</small><br>
-                    <small>${veri.islem_tipi}: ${saatStr}</small>
-                    <span style="float:right; color:${durumRengi}; font-weight:bold;">${durumYazisi}</span>
-                    ${nedenHtml}
-                </div>`;
+
+            // Modern Kart Tasarımı
+            html += `<div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 ${borderColor} relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-brand-navy text-base leading-tight">${gosterilecekIsim}</h4>
+                                <span class="text-xs text-slate-400 font-medium">${veri.lokasyon}</span>
+                            </div>
+                            <span class="font-bold text-sm ${txtColor}">${durumYazisi}</span>
+                        </div>
+                        <div class="flex justify-between items-end mt-1">
+                            <div class="text-[11px] text-slate-400 font-medium">Tel: ${veri.personel_tel}</div>
+                            <div class="px-2 py-1 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100">
+                                ${veri.islem_tipi} <i class="fas fa-chevron-right text-[8px] mx-1 text-slate-400"></i> ${saatStr}
+                            </div>
+                        </div>
+                        ${nedenHtml}
+                    </div>`;
         }
     });
-    container.innerHTML = html || "<p>Kayıt bulunamadı.</p>";
+    container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-folder-open text-3xl mb-3 opacity-50 block"></i>Kayıt bulunamadı.</div>`;
 };
 
 // ================= İZİN PLANLAMA =================
@@ -349,7 +381,6 @@ window.izinPlanlamaAc = () => {
     document.getElementById('leave-target-type').value = "Tümü";
     document.getElementById('leave-person-container').style.display = 'none';
 
-    // Rehberi select kutusuna bas (Admin numarası dahil hepsi gelir)
     const personSelect = document.getElementById('leave-person-select');
     personSelect.innerHTML = "";
     for (let tel in personelRehberi) {
@@ -379,6 +410,10 @@ document.getElementById('save-leave-btn').addEventListener('click', async () => 
         hedef = document.getElementById('leave-person-select').value;
     }
 
+    const btn = document.getElementById('save-leave-btn');
+    const oldText = btn.innerText;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
     try {
         await addDoc(collection(db, "izinler"), {
             baslangic_tarihi: baslangic,
@@ -388,9 +423,11 @@ document.getElementById('save-leave-btn').addEventListener('click', async () => 
             olusturulma: serverTimestamp()
         });
         
-        alert(`✅ İzin kaydı başarıyla oluşturuldu!\n\nTarih: ${baslangic} / ${bitis}\nHedef: ${hedef === "Tümü" ? "Tüm Şirket" : ismeCevir(hedef)}`);
+        btn.innerHTML = oldText;
+        alert(`✅ İzin başarıyla oluşturuldu!`);
         document.getElementById('leave-modal').style.display = 'none';
     } catch (e) {
+        btn.innerHTML = oldText;
         alert("Hata: İzin kaydedilemedi.");
     }
 });
