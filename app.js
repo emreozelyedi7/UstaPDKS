@@ -18,12 +18,23 @@ const db = getFirestore(app);
 
 // ================= AYARLAR =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
+
+// REHBER
 const personelRehberi = { 
     "5324328072": "Emre Özel İş", 
     "5419604133": "Emre Özel",
     "5327097461": "Volkan Usta" 
 };
+
+// YENİ: KİM HANGİ ŞUBENİN ÇALIŞANI?
+const personelSubeleri = {
+    "5324328072": "Pendik Şube",
+    "5419604133": "Atölye",
+    "5327097461": "Pendik Şube"
+};
+
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
+
 const subeKonumlari = {
     "Pendik Şube": { lat: 40.899520532909584, lng: 29.258524165071616 }, 
     "Atölye": { lat: 40.899520532909584, lng: 29.258524165071616 }      
@@ -50,7 +61,6 @@ const locationFilter = document.getElementById('location-filter');
 let tumHareketlerCache = [];
 let sonFiltrelenmisRapor = []; 
 
-// YENİ: Merkezileştirilmiş Ekran Kapatıcı (Çakışmaları Engeller)
 const tumEkranlariKapat = () => {
     [dashboardScreen, adminDashboardScreen, detailScreen, reportsScreen, leavesScreen].forEach(s => s?.classList.remove('active'));
 };
@@ -98,8 +108,21 @@ const adminVerileriniHesapla = async () => {
         if(document.getElementById('count-gelenler')) document.getElementById('count-gelenler').innerText = gelenler.size;
         if(document.getElementById('count-geckalanlar')) document.getElementById('count-geckalanlar').innerText = gecenler.size;
         
-        const toplamPersonel = Object.keys(personelRehberi).length;
-        const gelmeyenSayisi = toplamPersonel - gelenler.size;
+        // YENİ: Şubeye Göre Akıllı Gelmeyen Hesaplaması
+        let beklenenPersonelSayisi = 0;
+        let gelenKendiSubesinde = 0;
+
+        for (let tel in personelSubeleri) {
+            // Eğer "Tümü" seçiliyse veya personelin atandığı şube seçili filtreye uyuyorsa onu "Beklenen" listesine al
+            if (seciliSube === "Tümü" || personelSubeleri[tel] === seciliSube) {
+                beklenenPersonelSayisi++;
+                if (gelenler.has(tel)) {
+                    gelenKendiSubesinde++;
+                }
+            }
+        }
+        
+        const gelmeyenSayisi = beklenenPersonelSayisi - gelenKendiSubesinde;
         if(document.getElementById('count-gelmeyenler')) {
             document.getElementById('count-gelmeyenler').innerText = gelmeyenSayisi < 0 ? 0 : gelmeyenSayisi;
         }
@@ -323,7 +346,7 @@ document.getElementById('btn-giris')?.addEventListener('click', () => islemBasla
 document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
 
-// ================= YENİ: "GELMEYENLER" EKRANI MANTIĞI =================
+// ================= YENİ: "GELMEYENLER" EKRANI AKILLI MANTIĞI =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -337,20 +360,27 @@ window.detayAc = (k) => {
     const filter = locationFilter?.value || "Tümü";
     let html = ""; const bugun = new Date().toLocaleDateString('tr-TR');
     
-    // GELMEYENLER ÖZEL İŞLEMİ
+    // GELMEYENLER ÖZEL İŞLEMİ (Rehber ve Şube Zekası)
     if (k === 'Bugün Gelmeyenler') {
         let gelenlerBugun = new Set();
         tumHareketlerCache.forEach(v => {
             if(!v.tarih_saat) return;
             const tStr = v.tarih_saat.toDate().toLocaleDateString('tr-TR');
             if(tStr === bugun && v.islem_tipi === "Giriş") {
-                if (filter === "Tümü" || v.lokasyon === filter) gelenlerBugun.add(v.personel_tel);
+                gelenlerBugun.add(v.personel_tel);
             }
         });
 
         let gelmeyenler = [];
-        for (let tel in personelRehberi) {
-            if (!gelenlerBugun.has(tel)) gelmeyenler.push(tel);
+        for (let tel in personelSubeleri) {
+            const atanmisSube = personelSubeleri[tel];
+            // Eğer "Tümü" seçiliyse VEYA personelin kendi şubesi seçiliyse listeye dahil et
+            if (filter === "Tümü" || filter === atanmisSube) {
+                // Ve eğer bugün hiç giriş yapmamışsa
+                if (!gelenlerBugun.has(tel)) {
+                    gelmeyenler.push(tel);
+                }
+            }
         }
 
         if (gelmeyenler.length === 0) {
@@ -360,7 +390,7 @@ window.detayAc = (k) => {
                     <i class="fas fa-check text-4xl text-emerald-500"></i>
                 </div>
                 <h4 class="font-black text-brand-navy text-xl mb-2">Harika!</h4>
-                <p class="text-sm text-slate-500 font-medium px-6">Bugün tüm personeller eksiksiz olarak çalışıyor.</p>
+                <p class="text-sm text-slate-500 font-medium px-6">Seçilen şubede bugün tüm personeller eksiksiz olarak çalışıyor.</p>
             </div>`;
         } else {
             gelmeyenler.forEach(tel => {
@@ -369,7 +399,7 @@ window.detayAc = (k) => {
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <h4 class="font-bold text-brand-navy text-sm">${ismeCevir(tel)}</h4>
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Kayıt Bekleniyor</span>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${personelSubeleri[tel]}</span>
                         </div>
                         <span class="text-[10px] font-black px-2 py-1 rounded bg-red-50 text-red-500 uppercase border border-red-100">GELMEDİ</span>
                     </div>
@@ -378,7 +408,7 @@ window.detayAc = (k) => {
             });
         }
         if(container) container.innerHTML = html;
-        return; 
+        return; // İşlem bitti, alt kodlara inmesine gerek yok
     }
 
     // BUGÜN GELENLER VE GEÇ KALANLAR İŞLEMİ
@@ -429,30 +459,9 @@ document.getElementById('save-leave-btn')?.addEventListener('click', async () =>
     const btn = document.getElementById('save-leave-btn');
     try { await addDoc(collection(db, "izinler"), { baslangic_tarihi: baslangic, bitis_tarihi: bitis, izin_hedefi: hedef, isleyen_yonetici: auth.currentUser.email.split('@')[0], olusturulma: serverTimestamp() }); alert(`✅ İzin oluşturuldu!`); document.getElementById('leave-modal')?.classList.add('hidden'); } catch (e) { alert("Hata!"); }
 });
-
-window.raporEkraniAc = () => {
-    document.getElementById('sidebar')?.classList.add('-translate-x-full');
-    document.getElementById('sidebar-overlay')?.classList.add('hidden');
-    
-    tumEkranlariKapat();
-    reportsScreen?.classList.add('active');
-    
-    // YENİ: Tarih kutularının iOS/Android uyumlu çalışması için düzeltildi
-    const bugunISO = new Date().toISOString().split('T')[0];
-    if(document.getElementById('report-start-date')) document.getElementById('report-start-date').value = bugunISO;
-    if(document.getElementById('report-end-date')) document.getElementById('report-end-date').value = bugunISO;
-    
-    history.pushState({ ekran: 'raporlar' }, '', '#raporlar');
-};
-
 window.planlananIzinleriAc = async () => {
-    document.getElementById('sidebar')?.classList.add('-translate-x-full'); 
-    document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
-    
-    tumEkranlariKapat();
-    leavesScreen?.classList.add('active'); 
-    history.pushState({ ekran: 'izinler' }, '', '#izinler');
-    
+    document.getElementById('sidebar')?.classList.add('-translate-x-full'); document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
+    tumEkranlariKapat(); leavesScreen?.classList.add('active'); history.pushState({ ekran: 'izinler' }, '', '#izinler');
     const container = document.getElementById('leaves-list-container'); if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-spinner fa-spin mr-3"></i>Yükleniyor...</div>';
     try {
         const snap = await getDocs(query(collection(db, "izinler"))); let html = "";
