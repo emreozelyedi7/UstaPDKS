@@ -23,7 +23,6 @@
         }
     </script>
     <style>
-        /* Kaydırma ve Sünme Ayarları */
         body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }
         .screen { display: none; min-height: 100vh; flex-direction: column; }
         .screen.active { display: flex; }
@@ -43,7 +42,7 @@
                 <i class="fas fa-home text-lg text-slate-400 w-6 text-center"></i> Ana Pano
             </button>
             <button onclick="raporEkraniAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-emerald-50 active:scale-95 transition-all">
-                <i class="fas fa-file-invoice text-lg text-emerald-500 w-6 text-center"></i> Günlük Raporlar
+                <i class="fas fa-file-invoice text-lg text-emerald-500 w-6 text-center"></i> Tarihsel Raporlar
             </button>
             <button onclick="planlananIzinleriAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
                 <i class="fas fa-calendar-check text-lg text-blue-500 w-6 text-center"></i> Planlanan İzinler
@@ -159,12 +158,23 @@
         </div>
         <div class="px-6 flex-1 pb-10 overflow-y-auto">
             <div class="bg-white p-6 rounded-[2rem] shadow-sm mb-6 border border-slate-100">
-                <h3 class="text-xl font-black text-brand-navy mb-5 flex items-center"><i class="fas fa-calendar-alt text-emerald-500 mr-3"></i>Rapor Tarihi Seçin</h3>
+                <h3 class="text-xl font-black text-brand-navy mb-5 flex items-center"><i class="fas fa-calendar-alt text-emerald-500 mr-3"></i>Rapor Aralığı Seçin</h3>
+                
+                <div class="flex gap-3 mb-4">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest">Başlangıç</label>
+                        <input type="date" id="report-start-date" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700 text-sm">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest">Bitiş</label>
+                        <input type="date" id="report-end-date" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700 text-sm">
+                    </div>
+                </div>
+
                 <div class="space-y-4">
-                    <input type="date" id="report-date-input" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700">
                     <label class="flex items-center gap-3 cursor-pointer p-2 select-none">
                         <input type="checkbox" id="only-late-checkbox" class="w-5 h-5 rounded accent-red-500">
-                        <span class="text-sm font-bold text-slate-600">Sadece Geç Kalanları Göster</span>
+                        <span class="text-sm font-bold text-slate-600">Sadece Geç Kalanları/Erken Çıkanları Göster</span>
                     </label>
                     <button onclick="raporVerileriniGetir()" class="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">SORGULA</button>
                 </div>
