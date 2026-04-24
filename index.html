@@ -27,204 +27,194 @@
 <body class="text-slate-800 antialiased selection:bg-brand-orange selection:text-white">
 
     <div id="sidebar-overlay" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[10003] transition-opacity" onclick="toggleSidebar()"></div>
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-[280px] bg-white z-[10004] transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col rounded-r-[2rem] overflow-hidden">
-        <div class="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-[300px] bg-white z-[10004] transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col rounded-r-[2.5rem] overflow-hidden">
+        <div class="p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
             <img src="logo.png" alt="Logo" class="w-2/3 max-w-[150px]">
-            <button onclick="toggleSidebar()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-brand-orange bg-white rounded-full shadow-sm"><i class="fas fa-times"></i></button>
+            <button onclick="toggleSidebar()" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-brand-orange bg-white rounded-full shadow-sm"><i class="fas fa-times"></i></button>
         </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-2">
+        <div class="flex-1 overflow-y-auto p-5 space-y-2">
             <button onclick="anaEkranaDon()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
                 <i class="fas fa-home text-lg text-slate-400 w-6 text-center"></i> Ana Pano
             </button>
-            <button onclick="izinPlanlamaAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-blue-50 active:scale-95 transition-all">
-                <i class="fas fa-calendar-plus text-lg text-blue-500 w-6 text-center"></i> Yeni İzin Planla
+            <button onclick="raporEkraniAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-emerald-50 active:scale-95 transition-all">
+                <i class="fas fa-file-invoice text-lg text-emerald-500 w-6 text-center"></i> Günlük Raporlar
             </button>
             <button onclick="planlananIzinleriAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
-                <i class="fas fa-list-ul text-lg text-slate-400 w-6 text-center"></i> Planlanan İzinler
+                <i class="fas fa-calendar-check text-lg text-blue-500 w-6 text-center"></i> Planlanan İzinler
             </button>
-            <button onclick="detayAc('Maaş Kesinti Raporu')" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-orange-50 active:scale-95 transition-all">
-                <i class="fas fa-calculator text-lg text-brand-orange w-6 text-center"></i> Kesinti Raporu
+            <button onclick="izinPlanlamaAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
+                <i class="fas fa-calendar-plus text-lg text-slate-400 w-6 text-center"></i> Yeni İzin Planla
             </button>
             
             <div class="my-4 border-t border-slate-100"></div>
             
-            <button class="w-full flex items-center gap-4 p-4 text-left font-medium text-slate-400 rounded-2xl cursor-default">
-                <i class="fas fa-puzzle-piece text-lg w-6 text-center"></i> 
-                <div><span class="block text-xs text-brand-orange font-bold mb-0.5">Yakında</span>Yeni Özellikler...</div>
+            <button class="w-full flex items-center gap-4 p-4 text-left font-medium text-slate-400 rounded-2xl cursor-default opacity-60">
+                <i class="fas fa-chart-line text-lg w-6 text-center"></i> 
+                <div><span class="block text-[10px] text-brand-orange font-bold uppercase tracking-wider">Yakında</span>Performans Analizi</div>
             </button>
         </div>
         <div class="p-6 border-t border-slate-100 bg-slate-50">
-            <button id="sidebar-logout-btn" class="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold active:bg-slate-100 transition-colors shadow-sm text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap</button>
+            <button id="sidebar-logout-btn" class="w-full py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold active:bg-slate-100 transition-colors shadow-sm text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sistemden Çıkış</button>
         </div>
     </div>
+
     <div id="login-screen" class="screen active justify-center items-center p-4">
-        <div class="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 text-center">
-            <img src="logo.png" alt="Usta Cam Balkon PDKS" class="w-3/5 max-w-[200px] mx-auto mb-3">
-            <p class="text-slate-400 text-sm mb-8 font-medium tracking-wide">Personel Devam Kontrol</p>
+        <div class="bg-white p-10 rounded-[2.5rem] w-full max-w-sm shadow-xl border border-slate-100 text-center">
+            <img src="logo.png" alt="Logo" class="w-3/5 mx-auto mb-4">
+            <p class="text-slate-400 text-sm mb-10 font-medium">Personel Takip Sistemi</p>
             <div class="space-y-4">
-                <div class="relative">
-                    <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="tel" id="phone-input" placeholder="Telefon Numarası" maxlength="10" class="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange transition-all font-medium">
-                </div>
-                <div class="relative">
-                    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="password" id="password-input" placeholder="Şifre" class="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange transition-all font-medium">
-                </div>
-                <button id="login-btn" class="w-full py-4 bg-brand-orange text-white rounded-2xl font-bold text-lg shadow-lg shadow-brand-orange/30 active:scale-[0.98] transition-all mt-2">Giriş Yap</button>
+                <input type="tel" id="phone-input" placeholder="Telefon Numarası" maxlength="10" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-orange/30 transition-all font-medium">
+                <input type="password" id="password-input" placeholder="Şifre" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-orange/30 transition-all font-medium">
+                <button id="login-btn" class="w-full py-4 bg-brand-orange text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all mt-4">Giriş Yap</button>
             </div>
         </div>
     </div>
 
     <div id="dashboard-screen" class="screen">
-        <div class="bg-white px-6 py-5 flex justify-center items-center shadow-sm z-10 rounded-b-3xl mb-4">
+        <div class="bg-white px-6 py-5 flex justify-center items-center shadow-sm z-10 rounded-b-[2rem] mb-6">
             <img src="logo.png" alt="Logo" class="w-1/2 max-w-[180px]">
         </div>
-        <div class="px-6 py-2">
-            <h4 id="welcome-text" class="text-xl font-bold text-brand-navy">Hoş geldin...</h4>
-            <div id="status-badge" class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">Durum Kontrolü...</div>
+        <div class="px-8 mb-8">
+            <h4 id="welcome-text" class="text-2xl font-black text-brand-navy">Hoş geldin...</h4>
+            <div id="status-badge" class="inline-block mt-3 px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500">Durum Kontrolü...</div>
         </div>
-        <div class="px-6 py-6 flex-1 flex flex-col gap-4 justify-center">
-            <button id="btn-giris" class="hidden w-full h-40 bg-gradient-to-br from-brand-orange to-orange-600 rounded-[2rem] text-white shadow-xl shadow-orange-500/30 active:scale-95 transition-all flex-col items-center justify-center gap-3">
-                <i class="fas fa-sign-in-alt text-4xl mb-1"></i><span class="font-bold text-xl tracking-wide">MESAİ BAŞLAT</span>
+        <div class="px-8 flex-1 flex flex-col gap-5 justify-center">
+            <button id="btn-giris" class="hidden w-full h-44 bg-gradient-to-br from-brand-orange to-orange-600 rounded-[2.5rem] text-white shadow-2xl shadow-orange-500/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-4">
+                <i class="fas fa-sign-in-alt text-5xl"></i><span class="font-black text-xl tracking-wider">MESAİ BAŞLAT</span>
             </button>
-            <button id="btn-cikis" class="hidden w-full h-40 bg-gradient-to-br from-brand-navy to-blue-900 rounded-[2rem] text-white shadow-xl shadow-blue-900/30 active:scale-95 transition-all flex-col items-center justify-center gap-3">
-                <i class="fas fa-sign-out-alt text-4xl mb-1"></i><span class="font-bold text-xl tracking-wide">MESAİ BİTİR</span>
+            <button id="btn-cikis" class="hidden w-full h-44 bg-gradient-to-br from-brand-navy to-blue-900 rounded-[2.5rem] text-white shadow-2xl shadow-blue-900/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-4">
+                <i class="fas fa-sign-out-alt text-5xl"></i><span class="font-black text-xl tracking-wider">MESAİ BİTİR</span>
             </button>
         </div>
-        <div class="px-6 pb-8 mt-auto">
-            <button id="logout-btn" class="w-full py-4 bg-slate-200 text-slate-600 rounded-2xl font-bold active:bg-slate-300 transition-colors">Çıkış Yap</button>
-        </div>
+        <div class="p-8"><button id="logout-btn" class="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold active:bg-slate-200 transition-all">Çıkış Yap</button></div>
     </div>
 
     <div id="admin-dashboard-screen" class="screen">
-        <div class="bg-white px-6 py-5 flex justify-between items-center shadow-sm z-10 rounded-b-3xl mb-4 relative">
-            <button onclick="toggleSidebar()" class="w-8 h-8 flex items-center justify-center text-brand-navy hover:bg-slate-100 rounded-full transition-colors"><i class="fas fa-bars text-xl"></i></button>
+        <div class="bg-white px-6 py-6 flex justify-between items-center shadow-sm z-10 rounded-b-[2rem] mb-6 relative">
+            <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-brand-navy hover:bg-slate-50 rounded-full transition-colors"><i class="fas fa-bars text-xl"></i></button>
             <img src="logo.png" alt="Logo" class="w-1/2 max-w-[180px] absolute left-1/2 -translate-x-1/2">
-            <div class="w-8"></div>
+            <div class="w-10"></div>
         </div>
-
-        <div class="mx-6 mb-6 bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-50">
-            <div class="flex justify-between items-center mb-4">
+        <div class="mx-6 mb-8 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-50">
+            <div class="flex justify-between items-start mb-5">
                 <div>
-                    <h4 id="admin-welcome-text" class="text-lg font-bold text-brand-navy">Yönetici</h4>
-                    <div id="admin-status-badge" class="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">Kontrol...</div>
+                    <h4 id="admin-welcome-text" class="text-xl font-black text-brand-navy">Yönetici</h4>
+                    <div id="admin-status-badge" class="inline-block mt-2 px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">Kontrol Ediliyor...</div>
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button id="admin-btn-giris" class="hidden flex-1 h-16 bg-brand-orange text-white rounded-2xl shadow-md shadow-brand-orange/20 active:scale-95 transition-all items-center justify-center gap-2"><i class="fas fa-sign-in-alt text-lg"></i> <span class="font-bold text-sm">Giriş Yap</span></button>
-                <button id="admin-btn-cikis" class="hidden flex-1 h-16 bg-brand-navy text-white rounded-2xl shadow-md shadow-brand-navy/20 active:scale-95 transition-all items-center justify-center gap-2"><i class="fas fa-sign-out-alt text-lg"></i> <span class="font-bold text-sm">Çıkış Yap</span></button>
+            <div class="flex gap-4">
+                <button id="admin-btn-giris" class="hidden flex-1 h-16 bg-brand-orange text-white rounded-2xl shadow-lg shadow-brand-orange/20 active:scale-95 transition-all items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest"><i class="fas fa-sign-in-alt"></i> Giriş</button>
+                <button id="admin-btn-cikis" class="hidden flex-1 h-16 bg-brand-navy text-white rounded-2xl shadow-lg shadow-brand-navy/20 active:scale-95 transition-all items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest"><i class="fas fa-sign-out-alt"></i> Çıkış</button>
             </div>
         </div>
-        
-        <div class="px-6 pb-8 flex-1">
-            <div class="flex justify-between items-end mb-4">
-                <h4 class="text-base font-bold text-slate-800">Genel Bakış</h4>
-                <div class="relative">
-                    <select id="location-filter" class="appearance-none bg-white border border-slate-200 text-brand-navy font-bold rounded-xl pl-3 pr-8 py-2 outline-none focus:ring-2 focus:ring-brand-navy/20 cursor-pointer text-xs shadow-sm">
-                        <option value="Tümü">🌍 Tüm Şubeler</option>
-                        <option value="Pendik Şube">📍 Pendik Şube</option>
-                        <option value="Atölye">🛠️ Atölye</option>
-                    </select>
-                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
-                </div>
+        <div class="px-6 pb-10 flex-1">
+            <div class="flex justify-between items-center mb-6">
+                <h4 class="text-lg font-black text-slate-800">Canlı Pano</h4>
+                <select id="location-filter" class="bg-white border border-slate-200 text-brand-navy font-bold rounded-xl px-4 py-2 text-xs shadow-sm outline-none">
+                    <option value="Tümü">🌍 Tüm Şubeler</option>
+                    <option value="Pendik Şube">📍 Pendik Şube</option>
+                    <option value="Atölye">🛠️ Atölye</option>
+                </select>
             </div>
-            
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_15px_rgb(0,0,0,0.03)] active:scale-95 transition-all cursor-pointer border border-transparent hover:border-emerald-100" onclick="detayAc('Bugün Gelenler')">
-                    <h2 id="count-gelenler" class="text-3xl font-black text-emerald-500 mb-1">0</h2>
-                    <p class="font-bold text-slate-800 text-sm">Bugün Gelenler</p>
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm active:scale-95 transition-all border-l-4 border-emerald-500" onclick="detayAc('Bugün Gelenler')">
+                    <h2 id="count-gelenler" class="text-4xl font-black text-emerald-500 mb-1">0</h2>
+                    <p class="font-bold text-slate-700 text-xs">Bugün Gelenler</p>
                 </div>
-                <div class="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_15px_rgb(0,0,0,0.03)] active:scale-95 transition-all cursor-pointer border border-transparent hover:border-slate-200" onclick="detayAc('Bugün Gelmeyenler')">
-                    <h2 id="count-gelmeyenler" class="text-3xl font-black text-slate-400 mb-1">0</h2>
-                    <p class="font-bold text-slate-800 text-sm">Gelmeyenler</p>
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm active:scale-95 transition-all border-l-4 border-slate-300" onclick="detayAc('Bugün Gelmeyenler')">
+                    <h2 id="count-gelmeyenler" class="text-4xl font-black text-slate-400 mb-1">0</h2>
+                    <p class="font-bold text-slate-700 text-xs">Gelmeyenler</p>
                 </div>
-                <div class="col-span-2 bg-white p-5 rounded-[1.5rem] shadow-[0_4px_15px_rgb(0,0,0,0.03)] active:scale-95 transition-all cursor-pointer border border-transparent hover:border-red-100 flex justify-between items-center" onclick="detayAc('Geç Kalanlar')">
+                <div class="col-span-2 bg-white p-6 rounded-[2rem] shadow-sm active:scale-95 transition-all border-l-4 border-red-500 flex justify-between items-center" onclick="detayAc('Geç Kalanlar')">
                     <div>
-                        <p class="font-bold text-slate-800 text-base mb-1">Geç Kalanlar</p>
-                        <p class="text-xs text-slate-400">09:00 sonrası girenler</p>
+                        <p class="font-bold text-slate-800 text-base">Geç Kalanlar</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold mt-1">Hassasiyet Gösterenler</p>
                     </div>
-                    <h2 id="count-geckalanlar" class="text-4xl font-black text-red-500">0</h2>
+                    <h2 id="count-geckalanlar" class="text-5xl font-black text-red-500">0</h2>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="detail-screen" class="screen">
-        <div class="bg-white px-6 py-5 flex justify-between items-center shadow-sm z-10 rounded-b-3xl mb-4 relative">
-            <button onclick="anaEkranaDon()" class="w-8 h-8 flex items-center justify-center text-brand-navy hover:bg-slate-100 rounded-full transition-colors z-20"><i class="fas fa-arrow-left text-lg"></i></button>
+        <div class="bg-white px-6 py-6 flex justify-between items-center shadow-sm z-10 rounded-b-[2rem] mb-6 relative">
+            <button onclick="anaEkranaDon()" class="w-10 h-10 flex items-center justify-center text-brand-navy bg-slate-50 rounded-full transition-all"><i class="fas fa-arrow-left text-lg"></i></button>
             <img src="logo.png" alt="Logo" class="w-1/2 max-w-[180px] absolute left-1/2 -translate-x-1/2">
         </div>
-        <div class="px-6 flex-1 pb-8">
-            <h3 id="detail-title" class="text-xl font-bold text-brand-navy mb-4 border-b border-slate-200 pb-2">Detay Listesi</h3>
-            <div id="detail-list-container" class="space-y-3"></div>
+        <div class="px-6 flex-1 pb-10 overflow-y-auto">
+            <h3 id="detail-title" class="text-2xl font-black text-brand-navy mb-6">Detaylar</h3>
+            <div id="detail-list-container" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="reports-screen" class="screen">
+        <div class="bg-white px-6 py-6 flex justify-between items-center shadow-sm z-10 rounded-b-[2rem] mb-6 relative">
+            <button onclick="anaEkranaDon()" class="w-10 h-10 flex items-center justify-center text-brand-navy bg-slate-50 rounded-full transition-all"><i class="fas fa-arrow-left text-lg"></i></button>
+            <img src="logo.png" alt="Logo" class="w-1/2 max-w-[180px] absolute left-1/2 -translate-x-1/2">
+        </div>
+        <div class="px-6 flex-1 pb-10 overflow-y-auto">
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm mb-6 border border-slate-100">
+                <h3 class="text-xl font-black text-brand-navy mb-5 flex items-center"><i class="fas fa-calendar-alt text-emerald-500 mr-3"></i>Rapor Tarihi Seçin</h3>
+                <div class="space-y-4">
+                    <input type="date" id="report-date-input" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700">
+                    <label class="flex items-center gap-3 cursor-pointer p-2 select-none">
+                        <input type="checkbox" id="only-late-checkbox" class="w-5 h-5 rounded accent-red-500">
+                        <span class="text-sm font-bold text-slate-600">Sadece Geç Kalanları Göster</span>
+                    </label>
+                    <button onclick="raporVerileriniGetir()" class="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">SORGULA</button>
+                </div>
+            </div>
+            <div id="reports-list-container" class="space-y-4">
+                <div class="text-center py-10 text-slate-300 font-bold italic">Tarih seçip sorgulama yapın...</div>
+            </div>
         </div>
     </div>
 
     <div id="leaves-screen" class="screen">
-        <div class="bg-white px-6 py-5 flex justify-between items-center shadow-sm z-10 rounded-b-3xl mb-4 relative">
-            <button onclick="anaEkranaDon()" class="w-8 h-8 flex items-center justify-center text-brand-navy hover:bg-slate-100 rounded-full transition-colors z-20"><i class="fas fa-arrow-left text-lg"></i></button>
+        <div class="bg-white px-6 py-6 flex justify-between items-center shadow-sm z-10 rounded-b-[2rem] mb-6 relative">
+            <button onclick="anaEkranaDon()" class="w-10 h-10 flex items-center justify-center text-brand-navy bg-slate-50 rounded-full transition-all"><i class="fas fa-arrow-left text-lg"></i></button>
             <img src="logo.png" alt="Logo" class="w-1/2 max-w-[180px] absolute left-1/2 -translate-x-1/2">
         </div>
-        <div class="px-6 flex-1 pb-8">
-            <div class="flex justify-between items-center border-b border-slate-200 pb-2 mb-4">
-                <h3 class="text-xl font-bold text-brand-navy"><i class="fas fa-list-ul text-blue-500 mr-2"></i>Planlanan İzinler</h3>
-                <button onclick="izinPlanlamaAc()" class="text-xs bg-blue-50 text-blue-600 font-bold px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 active:scale-95"><i class="fas fa-plus mr-1"></i>Yeni</button>
+        <div class="px-6 flex-1 pb-10 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black text-brand-navy">Planlanan İzinler</h3>
+                <button onclick="izinPlanlamaAc()" class="w-10 h-10 bg-blue-500 text-white rounded-full shadow-lg"><i class="fas fa-plus"></i></button>
             </div>
-            <div id="leaves-list-container" class="space-y-3"></div>
+            <div id="leaves-list-container" class="space-y-4"></div>
         </div>
     </div>
 
-    <div id="reason-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10001] justify-center items-center p-4">
-        <div class="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl text-center">
-            <div class="w-20 h-20 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                <i id="reason-icon" class="fas fa-clock text-4xl"></i>
+    <div id="reason-modal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10001] justify-center items-center p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl text-center">
+            <div class="w-24 h-24 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-slate-100">
+                <i id="reason-icon" class="fas text-5xl"></i>
             </div>
-            <h3 id="reason-title" class="text-xl font-black text-brand-navy mb-2">Bildirim</h3>
-            <p id="reason-text" class="text-sm text-slate-500 mb-6 leading-relaxed"></p>
-            <textarea id="reason-input" placeholder="Kısaca açıklamanızı yazınız..." class="w-full h-24 p-4 bg-slate-50 border border-slate-200 rounded-2xl resize-none mb-6 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange transition-all"></textarea>
-            <div class="flex gap-3">
-                <button id="reason-skip-btn" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold active:scale-95 transition-all text-sm">Boş Bırak</button>
-                <button id="reason-submit-btn" class="flex-1 py-4 bg-brand-orange text-white rounded-2xl font-bold active:scale-95 shadow-lg shadow-brand-orange/30 transition-all text-sm">Kaydet</button>
+            <h3 id="reason-title" class="text-2xl font-black text-brand-navy mb-3 tracking-tight">Bildirim</h3>
+            <p id="reason-text" class="text-sm text-slate-500 mb-8 leading-relaxed font-medium px-2"></p>
+            <textarea id="reason-input" placeholder="Açıklamanızı buraya yazınız..." class="w-full h-28 p-5 bg-slate-50 border border-slate-200 rounded-3xl resize-none mb-8 outline-none focus:ring-2 focus:ring-brand-orange/30 font-medium text-sm"></textarea>
+            <div class="flex gap-4">
+                <button id="reason-skip-btn" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold active:scale-95 transition-all text-sm uppercase tracking-widest">Atla</button>
+                <button id="reason-submit-btn" class="flex-1 py-4 bg-brand-orange text-white rounded-2xl font-bold shadow-lg shadow-brand-orange/30 active:scale-95 transition-all text-sm uppercase tracking-widest">Kaydet</button>
             </div>
         </div>
     </div>
 
-    <div id="leave-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10005] justify-center items-center p-4">
-        <div class="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
-            <h3 class="text-xl font-black text-brand-navy mb-6 text-center border-b border-slate-100 pb-4">
-                <i class="fas fa-calendar-plus text-blue-500 mr-2"></i> İzin Planla
-            </h3>
-            <div class="space-y-4 mb-8">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Başlangıç Tarihi</label>
-                    <input type="date" id="leave-start-date" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-sm font-medium text-slate-700">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Bitiş Tarihi</label>
-                    <input type="date" id="leave-end-date" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-sm font-medium text-slate-700">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Kime Uygulanacak?</label>
-                    <select id="leave-target-type" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-sm font-medium text-slate-700 appearance-none cursor-pointer" onchange="togglePersonSelect()">
-                        <option value="Tümü">🏢 Tüm Personel (Şirket Tatili)</option>
-                        <option value="Kişi Seç">👤 Belirli Bir Kişiye</option>
-                    </select>
-                </div>
-                <div id="leave-person-container" class="hidden">
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Personel Seçin</label>
-                    <select id="leave-person-select" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/30 transition-all text-sm font-medium text-slate-700 appearance-none cursor-pointer"></select>
-                </div>
+    <div id="leave-modal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10005] justify-center items-center p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl">
+            <h3 class="text-2xl font-black text-brand-navy mb-8 text-center border-b border-slate-100 pb-5">İzin Planla</h3>
+            <div class="space-y-5 mb-10">
+                <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Başlangıç</label><input type="date" id="leave-start-date" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700"></div>
+                <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Bitiş</label><input type="date" id="leave-end-date" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700"></div>
+                <div><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Kapsam</label><select id="leave-target-type" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700" onchange="togglePersonSelect()"><option value="Tümü">🏢 Tüm Personel</option><option value="Kişi Seç">👤 Belirli Bir Kişi</option></select></div>
+                <div id="leave-person-container" class="hidden"><label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Personel Seç</label><select id="leave-person-select" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700"></select></div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('leave-modal').style.display='none'" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold active:scale-95 transition-all text-sm">İptal</button>
-                <button id="save-leave-btn" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold active:scale-95 shadow-lg shadow-blue-500/30 transition-all text-sm">İzni Kaydet</button>
-            </div>
+            <div class="flex gap-4"><button onclick="document.getElementById('leave-modal').classList.add('hidden')" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold text-sm">İPTAL</button><button id="save-leave-btn" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 text-sm">KAYDET</button></div>
         </div>
     </div>
 
     <div id="camera-screen" class="hidden fixed inset-0 bg-black z-[9999] flex-col justify-center">
-        <button id="cancel-camera-btn" class="absolute top-10 left-6 px-5 py-2.5 bg-white/20 backdrop-blur text-white border border-white/30 rounded-xl font-medium active:bg-white/30 transition-all z-50">İptal</button>
-        <div id="reader" class="w-full overflow-hidden rounded-[2rem]"></div>
+        <button id="cancel-camera-btn" class="absolute top-12 left-8 px-6 py-3 bg-white/20 backdrop-blur-lg text-white border border-white/40 rounded-2xl font-black z-50 uppercase tracking-widest text-xs">İptal</button>
+        <div id="reader" class="w-full overflow-hidden"></div>
     </div>
 
     <script type="module" src="app.js"></script>
