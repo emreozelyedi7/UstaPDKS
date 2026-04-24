@@ -16,19 +16,37 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ================= AYARLAR VE REHBER =================
+// ================= AYARLAR VE REHBER (YENİ KİŞİLER EKLENDİ) =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
 const personelRehberi = { 
     "5324328072": "Emre Özel İş", 
     "5419604133": "Emre Özel",
-    "5327097461": "Volkan Usta" 
+    "5327097461": "Volkan Usta",
+    "5304901758": "Barış Eren",
+    "5445995434": "Burak Albayrak",
+    "5453470226": "Cem Arslan",
+    "5462825561": "Ferhat",
+    "5303835099": "Okan",
+    "5398506894": "Hakan",
+    "5453265703": "Barış",
+    "5536424994": "Semra Polat",
+    "5545841092": "Can"
 };
 
 const personelSubeleri = {
     "5324328072": "Pendik Şube",
     "5419604133": "Atölye",
-    "5327097461": "Pendik Şube"
+    "5327097461": "Pendik Şube",
+    "5304901758": "Atölye",
+    "5445995434": "Atölye",
+    "5453470226": "Pendik Şube",
+    "5462825561": "Atölye",
+    "5303835099": "Atölye",
+    "5398506894": "Atölye",
+    "5453265703": "Atölye",
+    "5536424994": "Pendik Şube",
+    "5545841092": "Atölye"
 };
 
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
@@ -83,7 +101,6 @@ window.anaEkranaDon = () => {
 };
 window.addEventListener('popstate', anaEkranaDon);
 
-// ================= YENİ: SİSTEMİ ZORLA GÜNCELLEME (CACHE BUSTER) =================
 window.sistemiGuncelle = () => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -97,8 +114,6 @@ window.sistemiGuncelle = () => {
     }
     
     setTimeout(() => {
-        // Tarayıcıyı kandırmak için URL'nin sonuna anlık saati ekliyoruz
-        // Bu sayede Safari "Bu yeni bir sayfa" sanıp önbellekteki eski kodu silip yenisini çeker.
         const yeniUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + new Date().getTime();
         window.location.href = yeniUrl;
     }, 1000);
@@ -173,7 +188,11 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
 
 // ================= GPS VE İŞLEM MANTIĞI =================
 let beklemedekiK = null; let aktifIslemTipi = "";
-const islemBaslat = (tip) => { aktifIslemTipi = tip; document.getElementById('branch-modal')?.classList.remove('hidden'); };
+
+const islemBaslat = (tip) => { 
+    aktifIslemTipi = tip; 
+    document.getElementById('branch-modal')?.classList.remove('hidden'); 
+};
 
 window.gpsKonumDogrula = (loc) => {
     document.getElementById('branch-modal')?.classList.add('hidden');
@@ -332,7 +351,7 @@ window.excelIndir = () => {
     XLSX.writeFile(workbook, `PDKS_Rapor_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
 };
 
-// ================= YENİ: "GELMEYENLER" EKRANI AKILLI MANTIĞI =================
+// ================= GELMEYENLER EKRANI AKILLI MANTIĞI =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -516,9 +535,9 @@ document.getElementById('login-btn')?.addEventListener('click', () => {
 
 document.getElementById('logout-btn')?.addEventListener('click', () => signOut(auth));
 document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => signOut(auth));
-document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
-document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
 document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
 
 if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
