@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>USTA PDKS</title>
     
     <link rel="icon" type="image/png" href="icon.png">
@@ -51,6 +56,18 @@
             </button>
             <button onclick="izinPlanlamaAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
                 <i class="fas fa-calendar-plus text-lg text-slate-400 w-6 text-center"></i> Yeni İzin Planla
+            </button>
+            
+            <div class="my-4 border-t border-slate-100"></div>
+
+            <button onclick="sistemiGuncelle()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-orange-50 active:scale-95 transition-all shadow-sm border border-slate-100 bg-white mb-2">
+                <i class="fas fa-sync-alt text-lg text-brand-orange w-6 text-center"></i> 
+                <div><span class="block text-[10px] text-brand-orange font-bold uppercase tracking-widest">Hata Çözücü</span>Sistemi Güncelle</div>
+            </button>
+            
+            <button class="w-full flex items-center gap-4 p-4 text-left font-medium text-slate-400 rounded-2xl cursor-default opacity-60">
+                <i class="fas fa-chart-line text-lg w-6 text-center"></i> 
+                <div><span class="block text-[10px] text-brand-orange font-bold uppercase tracking-wider">Yakında</span>Performans Analizi</div>
             </button>
         </div>
         <div class="p-6 border-t border-slate-100 bg-slate-50">
@@ -237,9 +254,9 @@
     </div>
 
     <div id="loading-overlay" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[20000] flex flex-col justify-center items-center text-white">
-        <i class="fas fa-map-marker-alt text-5xl mb-4 animate-bounce text-brand-orange"></i>
-        <p class="font-bold text-lg tracking-wide">Konumunuz Doğrulanıyor...</p>
-        <p class="text-xs text-slate-300 mt-2">Lütfen bekleyiniz</p>
+        <i id="loading-icon" class="fas fa-map-marker-alt text-5xl mb-4 animate-bounce text-brand-orange"></i>
+        <p id="loading-text-1" class="font-bold text-lg tracking-wide">Konumunuz Doğrulanıyor...</p>
+        <p id="loading-text-2" class="text-xs text-slate-300 mt-2">Lütfen bekleyiniz</p>
     </div>
 
     <script type="module" src="app.js"></script>
