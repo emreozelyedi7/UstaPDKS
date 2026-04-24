@@ -205,38 +205,55 @@ document.getElementById('reason-skip-btn')?.addEventListener('click', () => {
     if(beklemedekiK) { veritabaninaYaz(beklemedekiK.tip, beklemedekiK.loc, beklemedekiK.islem, beklemedekiK.fark, ""); beklemedekiK = null; }
 });
 
-// ================= RAPOR MANTIĞI =================
+// ================= GÜNCEL RAPOR MANTIĞI (Tarih Aralıklı) =================
 window.raporVerileriniGetir = async () => {
-    const dateStr = document.getElementById('report-date-input')?.value;
+    const startStr = document.getElementById('report-start-date')?.value;
+    const endStr = document.getElementById('report-end-date')?.value;
     const onlyLate = document.getElementById('only-late-checkbox')?.checked;
-    if(!dateStr) return alert("Tarih seçin!");
+    
+    if(!startStr || !endStr) return alert("Lütfen başlangıç ve bitiş tarihlerini seçin!");
+
+    // JavaScript Date nesnelerine çevirip saatlerini 00:00 ve 23:59 olarak ayarlıyoruz ki o günleri tam kapsasın
+    const startDate = new Date(startStr);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(endStr);
+    endDate.setHours(23, 59, 59, 999);
+
+    if(startDate > endDate) return alert("Bitiş tarihi, başlangıç tarihinden önce olamaz!");
 
     const container = document.getElementById('reports-list-container');
     if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-sync fa-spin mr-3 text-emerald-500"></i>Veriler Çekiliyor...</div>';
 
-    const formattedDate = dateStr.split('-').reverse().join('.');
-
     try {
         const snap = await getDocs(collection(db, "hareketler"));
         let raporlar = [];
+        
         snap.forEach(doc => {
             const d = doc.data();
             if(!d.tarih_saat) return;
-            const tStr = d.tarih_saat.toDate().toLocaleDateString('tr-TR');
-            if(tStr === formattedDate) {
-                if(onlyLate && d.durum_etiketi !== "Geç Kaldı") return;
+            const docDate = d.tarih_saat.toDate();
+            
+            // Seçilen iki tarih arasında mı?
+            if(docDate >= startDate && docDate <= endDate) {
+                // Eğer "Sadece Geç Kalanlar" seçiliyse, Normal girişleri atla
+                if(onlyLate && (d.durum_etiketi !== "Geç Kaldı" && d.durum_etiketi !== "Erken Çıktı")) return;
                 raporlar.push(d);
             }
         });
 
+        // Yeniden eskiye sıralama
         raporlar.sort((a,b) => b.tarih_saat.toMillis() - a.tarih_saat.toMillis());
 
         let html = "";
         if(raporlar.length === 0) {
-            html = '<div class="text-center py-10 text-slate-400 font-bold italic">Bu tarihte kayıt bulunamadı.</div>';
+            html = '<div class="text-center py-10 text-slate-400 font-bold italic">Seçilen aralıkta kayıt bulunamadı.</div>';
         } else {
             raporlar.forEach(r => {
-                const saat = r.tarih_saat.toDate().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+                const rDateObj = r.tarih_saat.toDate();
+                const gunStr = rDateObj.toLocaleDateString('tr-TR');
+                const saatStr = rDateObj.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+                
                 const isLate = r.durum_etiketi === "Geç Kaldı";
                 const isEarly = r.durum_etiketi === "Erken Çıktı";
                 const color = isLate ? "border-red-500" : (isEarly ? "border-orange-500" : "border-emerald-500");
@@ -249,7 +266,7 @@ window.raporVerileriniGetir = async () => {
                         <span class="text-[10px] font-black px-2 py-1 rounded bg-slate-100">${r.islem_tipi}</span>
                     </div>
                     <div class="flex justify-between items-center mt-3">
-                        <div class="flex items-center gap-2"><i class="far fa-clock text-slate-400 text-xs"></i><span class="font-black text-slate-800 text-sm">${saat}</span></div>
+                        <div class="flex items-center gap-2"><i class="far fa-calendar-alt text-slate-400 text-xs"></i><span class="font-black text-slate-800 text-xs">${gunStr} - ${saatStr}</span></div>
                         <span class="text-[10px] font-black italic ${isLate ? 'text-red-500' : 'text-emerald-500'}">${r.durum_etiketi || 'Zamanında'}</span>
                     </div>
                     ${r.islem_notu ? `<div class="mt-3 p-3 bg-white/60 rounded-xl text-[10px] text-slate-500 border border-slate-100 leading-relaxed italic"><strong class="text-slate-700">Mazeret:</strong> ${r.islem_notu}</div>` : ''}
@@ -305,7 +322,11 @@ window.raporEkraniAc = () => {
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
     adminDashboardScreen?.classList.remove('active');
     reportsScreen?.classList.add('active');
-    if(document.getElementById('report-date-input')) document.getElementById('report-date-input').valueAsDate = new Date();
+    
+    // Varsayılan olarak bugünü hem başlangıç hem bitiş yapıyoruz
+    if(document.getElementById('report-start-date')) document.getElementById('report-start-date').valueAsDate = new Date();
+    if(document.getElementById('report-end-date')) document.getElementById('report-end-date').valueAsDate = new Date();
+    
     history.pushState({ ekran: 'raporlar' }, '', '#raporlar');
 };
 
@@ -418,7 +439,6 @@ onAuthStateChanged(auth, (u) => {
     }
 });
 
-// Güvenli Tıklama Atamaları (Optional Chaining)
 document.getElementById('login-btn')?.addEventListener('click', () => {
     const p = document.getElementById('phone-input')?.value; const s = document.getElementById('password-input')?.value;
     if(!p || !s) return alert("Bilgileri girin!");
