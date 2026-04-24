@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>USTA PDKS</title>
+    
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <script>
         tailwind.config = {
             theme: {
@@ -17,6 +23,7 @@
         }
     </script>
     <style>
+        /* Kaydırma ve Sünme Ayarları */
         body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }
         .screen { display: none; min-height: 100vh; flex-direction: column; }
         .screen.active { display: flex; }
@@ -44,12 +51,18 @@
             <button onclick="izinPlanlamaAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
                 <i class="fas fa-calendar-plus text-lg text-slate-400 w-6 text-center"></i> Yeni İzin Planla
             </button>
+            
+            <div class="my-4 border-t border-slate-100"></div>
+            
+            <button class="w-full flex items-center gap-4 p-4 text-left font-medium text-slate-400 rounded-2xl cursor-default opacity-60">
+                <i class="fas fa-chart-line text-lg w-6 text-center"></i> 
+                <div><span class="block text-[10px] text-brand-orange font-bold uppercase tracking-wider">Yakında</span>Performans Analizi</div>
+            </button>
         </div>
         <div class="p-6 border-t border-slate-100 bg-slate-50">
             <button id="sidebar-logout-btn" class="w-full py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold active:bg-slate-100 transition-colors shadow-sm text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sistemden Çıkış</button>
         </div>
     </div>
-
     <div id="login-screen" class="screen active justify-center items-center p-4">
         <div class="bg-white p-10 rounded-[2.5rem] w-full max-w-sm shadow-xl border border-slate-100 text-center">
             <img src="logo.png" alt="Logo" class="w-3/5 mx-auto mb-4">
