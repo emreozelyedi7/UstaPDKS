@@ -17,13 +17,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ================= AYARLAR =================
-// YENİ: Artık iki tane yönetici var (Sen ve Volkan Usta)
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
 const personelRehberi = { 
     "5324328072": "Emre Özel İş", 
     "5419604133": "Emre Özel",
-    "5327097461": "Volkan Usta" // Volkan Usta Rehbere Eklendi
+    "5327097461": "Volkan Usta" 
 };
 
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
@@ -127,11 +126,9 @@ let aktifIslemTipi = "";
 
 const islemBaslat = (tip) => {
     aktifIslemTipi = tip;
-    // Kamera yerine direkt olarak "Şube Seçim" modalını açıyoruz
     document.getElementById('branch-modal').classList.remove('hidden');
 };
 
-// Modal'daki butonlara tıklandığında çalışır
 window.gpsKonumDogrula = (loc) => {
     document.getElementById('branch-modal').classList.add('hidden');
     document.getElementById('loading-overlay').classList.remove('hidden');
@@ -199,7 +196,7 @@ document.getElementById('reason-skip-btn').addEventListener('click', () => {
     if(beklemedekiK) { veritabaninaYaz(beklemedekiK.tip, beklemedekiK.loc, beklemedekiK.islem, beklemedekiK.fark, ""); beklemedekiK = null; }
 });
 
-// RAPOR MANTIĞI
+// ================= RAPOR MANTIĞI =================
 window.raporVerileriniGetir = async () => {
     const dateStr = document.getElementById('report-date-input').value;
     const onlyLate = document.getElementById('only-late-checkbox').checked;
@@ -254,12 +251,12 @@ window.raporVerileriniGetir = async () => {
     } catch(e) { container.innerHTML = '<div class="text-red-500 font-bold">Hata oluştu!</div>'; }
 };
 
-// OTURUM
+// ================= OTURUM VE OLAY DİNLEYİCİLERİ =================
 onAuthStateChanged(auth, (u) => {
     if (u) {
         loginScreen.classList.remove('active');
         const p = u.email.split('@')[0];
-        const isAdmin = ADMIN_PHONES.includes(p); // YENİ KONTROL SİSTEMİ
+        const isAdmin = ADMIN_PHONES.includes(p); 
         
         if(isAdmin) {
             document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
@@ -268,7 +265,7 @@ onAuthStateChanged(auth, (u) => {
             document.getElementById('welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
             dashboardScreen.classList.add('active'); arayuzDurumuGuncelle(p, false);
         }
-    } else { loginScreen.classList.add('active'); [adminDashboardScreen, dashboardScreen, reportsScreen].forEach(s => s.classList.remove('active')); }
+    } else { loginScreen.classList.add('active'); [adminDashboardScreen, dashboardScreen, reportsScreen, leavesScreen, detailScreen].forEach(s => s.classList.remove('active')); }
 });
 
 document.getElementById('login-btn').onclick = () => {
@@ -278,18 +275,18 @@ document.getElementById('login-btn').onclick = () => {
     signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => { b.innerHTML='Giriş Yap'; alert("Hata!"); });
 };
 
+// ================= BUTON ÇÖKME HATASI BURADA GİDERİLDİ =================
+// Ana ekrandan sildiğimiz admin-logout-btn tetikleyicisi silindi, artık kod çalışmaya devam edip alttaki butonları okuyabiliyor.
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 document.getElementById('sidebar-logout-btn').onclick = () => signOut(auth);
-document.getElementById('admin-logout-btn').onclick = () => signOut(auth);
 
-// Butonlara yeni işlev bağlandı (Kamera yerine direkt GPS başlatıcı)
 document.getElementById('btn-giris').onclick = () => islemBaslat("Giriş");
 document.getElementById('btn-cikis').onclick = () => islemBaslat("Çıkış");
 document.getElementById('admin-btn-giris').onclick = () => islemBaslat("Giriş");
 document.getElementById('admin-btn-cikis').onclick = () => islemBaslat("Çıkış");
 locationFilter.onchange = adminVerileriniHesapla;
 
-// İZİN
+// ================= İZİN YÖNETİMİ =================
 window.izinPlanlamaAc = () => { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); document.getElementById('leave-modal').classList.remove('hidden'); const ps = document.getElementById('leave-person-select'); ps.innerHTML = ""; for(let t in personelRehberi) ps.innerHTML += `<option value="${t}">${personelRehberi[t]}</option>`; };
 window.togglePersonSelect = () => { document.getElementById('leave-person-container').classList.toggle('hidden', document.getElementById('leave-target-type').value === "Tümü"); };
 document.getElementById('save-leave-btn').onclick = async () => { 
