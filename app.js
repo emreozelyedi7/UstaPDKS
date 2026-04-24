@@ -205,7 +205,7 @@ document.getElementById('reason-skip-btn')?.addEventListener('click', () => {
     if(beklemedekiK) { veritabaninaYaz(beklemedekiK.tip, beklemedekiK.loc, beklemedekiK.islem, beklemedekiK.fark, ""); beklemedekiK = null; }
 });
 
-// ================= GÜNCEL RAPOR MANTIĞI (Tarih Aralıklı) =================
+// ================= AKORDEON (GÜN GÜN) RAPOR MANTIĞI =================
 window.raporVerileriniGetir = async () => {
     const startStr = document.getElementById('report-start-date')?.value;
     const endStr = document.getElementById('report-end-date')?.value;
@@ -213,10 +213,8 @@ window.raporVerileriniGetir = async () => {
     
     if(!startStr || !endStr) return alert("Lütfen başlangıç ve bitiş tarihlerini seçin!");
 
-    // JavaScript Date nesnelerine çevirip saatlerini 00:00 ve 23:59 olarak ayarlıyoruz ki o günleri tam kapsasın
     const startDate = new Date(startStr);
     startDate.setHours(0, 0, 0, 0);
-    
     const endDate = new Date(endStr);
     endDate.setHours(23, 59, 59, 999);
 
@@ -227,50 +225,88 @@ window.raporVerileriniGetir = async () => {
 
     try {
         const snap = await getDocs(collection(db, "hareketler"));
-        let raporlar = [];
+        let gruplanmisRaporlar = {}; // Gün gün gruplamak için obje
         
         snap.forEach(doc => {
             const d = doc.data();
             if(!d.tarih_saat) return;
             const docDate = d.tarih_saat.toDate();
             
-            // Seçilen iki tarih arasında mı?
             if(docDate >= startDate && docDate <= endDate) {
-                // Eğer "Sadece Geç Kalanlar" seçiliyse, Normal girişleri atla
                 if(onlyLate && (d.durum_etiketi !== "Geç Kaldı" && d.durum_etiketi !== "Erken Çıktı")) return;
-                raporlar.push(d);
+                
+                const gunStr = docDate.toLocaleDateString('tr-TR');
+                if(!gruplanmisRaporlar[gunStr]) gruplanmisRaporlar[gunStr] = [];
+                gruplanmisRaporlar[gunStr].push(d);
             }
         });
 
-        // Yeniden eskiye sıralama
-        raporlar.sort((a,b) => b.tarih_saat.toMillis() - a.tarih_saat.toMillis());
+        // Tarihleri sondan başa (yeniden eskiye) sıralama
+        const siraliTarihler = Object.keys(gruplanmisRaporlar).sort((a,b) => {
+            const [d1, m1, y1] = a.split('.');
+            const [d2, m2, y2] = b.split('.');
+            return new Date(y2, m2-1, d2) - new Date(y1, m1-1, d1);
+        });
 
         let html = "";
-        if(raporlar.length === 0) {
+        if(siraliTarihler.length === 0) {
             html = '<div class="text-center py-10 text-slate-400 font-bold italic">Seçilen aralıkta kayıt bulunamadı.</div>';
         } else {
-            raporlar.forEach(r => {
-                const rDateObj = r.tarih_saat.toDate();
-                const gunStr = rDateObj.toLocaleDateString('tr-TR');
-                const saatStr = rDateObj.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
-                
-                const isLate = r.durum_etiketi === "Geç Kaldı";
-                const isEarly = r.durum_etiketi === "Erken Çıktı";
-                const color = isLate ? "border-red-500" : (isEarly ? "border-orange-500" : "border-emerald-500");
-                const bg = isLate ? "bg-red-50/50" : (isEarly ? "bg-orange-50/50" : "bg-white");
-                
+            siraliTarihler.forEach(tarih => {
+                const gununKayitlari = gruplanmisRaporlar[tarih];
+                // Gün içindeki kayıtları da saate göre (yeniden eskiye) sırala
+                gununKayitlari.sort((a,b) => b.tarih_saat.toMillis() - a.tarih_saat.toMillis());
+
+                // Akordeon Başlığı (Tarih Butonu)
                 html += `
-                <div class="p-5 rounded-[2rem] shadow-sm border-l-8 ${color} ${bg} transition-all mb-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <div><h4 class="font-black text-brand-navy text-sm">${ismeCevir(r.personel_tel)}</h4><span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${r.lokasyon}</span></div>
-                        <span class="text-[10px] font-black px-2 py-1 rounded bg-slate-100">${r.islem_tipi}</span>
-                    </div>
-                    <div class="flex justify-between items-center mt-3">
-                        <div class="flex items-center gap-2"><i class="far fa-calendar-alt text-slate-400 text-xs"></i><span class="font-black text-slate-800 text-xs">${gunStr} - ${saatStr}</span></div>
-                        <span class="text-[10px] font-black italic ${isLate ? 'text-red-500' : 'text-emerald-500'}">${r.durum_etiketi || 'Zamanında'}</span>
-                    </div>
-                    ${r.islem_notu ? `<div class="mt-3 p-3 bg-white/60 rounded-xl text-[10px] text-slate-500 border border-slate-100 leading-relaxed italic"><strong class="text-slate-700">Mazeret:</strong> ${r.islem_notu}</div>` : ''}
-                </div>`;
+                <div class="mb-4">
+                    <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i.fa-chevron-down').classList.toggle('rotate-180');" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl flex justify-between items-center active:scale-95 transition-all shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-brand-orange border border-slate-100">
+                                <i class="far fa-calendar-alt text-lg"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-black text-brand-navy">${tarih}</h4>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${gununKayitlari.length} İşlem Kaydı</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </button>
+                    
+                    <div class="hidden flex-col gap-3 mt-3 px-2 border-l-2 border-brand-orange/20 ml-5 transition-all">
+                `;
+
+                // O güne ait kayıtları listele
+                gununKayitlari.forEach(r => {
+                    const rDateObj = r.tarih_saat.toDate();
+                    const saatStr = rDateObj.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+                    
+                    const isLate = r.durum_etiketi === "Geç Kaldı";
+                    const isEarly = r.durum_etiketi === "Erken Çıktı";
+                    const color = isLate ? "border-red-500" : (isEarly ? "border-orange-500" : "border-emerald-500");
+                    const bg = isLate ? "bg-red-50/50" : (isEarly ? "bg-orange-50/50" : "bg-white");
+                    
+                    html += `
+                    <div class="p-4 rounded-[1.5rem] shadow-sm border-l-8 ${color} ${bg} transition-all">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-black text-brand-navy text-sm">${ismeCevir(r.personel_tel)}</h4>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${r.lokasyon}</span>
+                            </div>
+                            <span class="text-[10px] font-black px-2 py-1 rounded bg-slate-100">${r.islem_tipi}</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <div class="flex items-center gap-2">
+                                <i class="far fa-clock text-slate-400 text-xs"></i>
+                                <span class="font-black text-slate-800 text-sm">${saatStr}</span>
+                            </div>
+                            <span class="text-[10px] font-black italic ${isLate ? 'text-red-500' : 'text-emerald-500'}">${r.durum_etiketi || 'Zamanında'}</span>
+                        </div>
+                        ${r.islem_notu ? `<div class="mt-3 p-3 bg-white/60 rounded-xl text-[10px] text-slate-500 border border-slate-100 leading-relaxed italic"><strong class="text-slate-700">Mazeret:</strong> ${r.islem_notu}</div>` : ''}
+                    </div>`;
+                });
+
+                html += `</div></div>`; // Akordeon içeriğini ve wrapper'ı kapat
             });
         }
         if(container) container.innerHTML = html;
@@ -323,7 +359,6 @@ window.raporEkraniAc = () => {
     adminDashboardScreen?.classList.remove('active');
     reportsScreen?.classList.add('active');
     
-    // Varsayılan olarak bugünü hem başlangıç hem bitiş yapıyoruz
     if(document.getElementById('report-start-date')) document.getElementById('report-start-date').valueAsDate = new Date();
     if(document.getElementById('report-end-date')) document.getElementById('report-end-date').valueAsDate = new Date();
     
