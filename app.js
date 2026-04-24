@@ -52,15 +52,15 @@ const locationFilter = document.getElementById('location-filter');
 let tumHareketlerCache = [];
 
 window.toggleSidebar = () => {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('sidebar-overlay').classList.toggle('hidden');
+    document.getElementById('sidebar')?.classList.toggle('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.toggle('hidden');
 };
 
 window.anaEkranaDon = () => {
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-    document.getElementById('sidebar-overlay').classList.add('hidden');
-    [detailScreen, leavesScreen, reportsScreen].forEach(s => s.classList.remove('active'));
-    adminDashboardScreen.classList.add('active');
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    [detailScreen, leavesScreen, reportsScreen].forEach(s => s?.classList.remove('active'));
+    adminDashboardScreen?.classList.add('active');
 };
 window.addEventListener('popstate', anaEkranaDon);
 
@@ -71,7 +71,7 @@ const adminVerileriniHesapla = async () => {
         tumHareketlerCache = [];
         querySnapshot.forEach(doc => tumHareketlerCache.push(doc.data()));
         const bugun = new Date().toLocaleDateString('tr-TR');
-        const seciliSube = locationFilter.value;
+        const seciliSube = locationFilter?.value || "Tümü";
         let gelenler = new Set(); let gecenler = new Set();
         
         tumHareketlerCache.forEach(v => {
@@ -83,8 +83,8 @@ const adminVerileriniHesapla = async () => {
                 if(t.getHours() > 9 || (t.getHours() === 9 && t.getMinutes() > 0)) gecenler.add(v.personel_tel);
             }
         });
-        document.getElementById('count-gelenler').innerText = gelenler.size;
-        document.getElementById('count-geckalanlar').innerText = gecenler.size;
+        if(document.getElementById('count-gelenler')) document.getElementById('count-gelenler').innerText = gelenler.size;
+        if(document.getElementById('count-geckalanlar')) document.getElementById('count-geckalanlar').innerText = gecenler.size;
     } catch (e) { console.log(e); }
 };
 
@@ -111,32 +111,34 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     const bC = document.getElementById(`${pref}btn-cikis`);
     const badge = document.getElementById(`${pref}status-badge`);
 
-    if(son === "Giriş") {
-        bG.style.display="none"; bC.style.display="flex";
-        badge.innerText="MESAİDE"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-widest";
-    } else {
-        bG.style.display="flex"; bC.style.display="none";
-        badge.innerText="MESAİ DIŞI"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-600 border border-red-200 uppercase tracking-widest";
+    if (bG && bC && badge) {
+        if(son === "Giriş") {
+            bG.style.display="none"; bC.style.display="flex";
+            badge.innerText="MESAİDE"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-widest";
+        } else {
+            bG.style.display="flex"; bC.style.display="none";
+            badge.innerText="MESAİ DIŞI"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-600 border border-red-200 uppercase tracking-widest";
+        }
     }
 };
 
-// ================= YENİ: SADECE GPS İLE İŞLEM YAPAN SİSTEM =================
+// ================= GPS VE İŞLEM MANTIĞI =================
 let beklemedekiK = null; 
 let aktifIslemTipi = "";
 
 const islemBaslat = (tip) => {
     aktifIslemTipi = tip;
-    document.getElementById('branch-modal').classList.remove('hidden');
+    document.getElementById('branch-modal')?.classList.remove('hidden');
 };
 
 window.gpsKonumDogrula = (loc) => {
-    document.getElementById('branch-modal').classList.add('hidden');
-    document.getElementById('loading-overlay').classList.remove('hidden');
+    document.getElementById('branch-modal')?.classList.add('hidden');
+    document.getElementById('loading-overlay')?.classList.remove('hidden');
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
             const dist = mesafeHesapla(pos.coords.latitude, pos.coords.longitude, subeKonumlari[loc].lat, subeKonumlari[loc].lng);
-            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('loading-overlay')?.classList.add('hidden');
 
             if (dist <= MAKSIMUM_MESAFE_METRE) {
                 const d = new Date(); const h = d.getHours(); const m = d.getMinutes();
@@ -147,11 +149,18 @@ window.gpsKonumDogrula = (loc) => {
                 
                 if (isl !== "") {
                     beklemedekiK = { tip: aktifIslemTipi, loc, islem: isl, fark: frk };
-                    document.getElementById('reason-input').value = "";
+                    if(document.getElementById('reason-input')) document.getElementById('reason-input').value = "";
                     const rI = document.getElementById('reason-icon');
-                    if(isl === "Gecikme") { rI.className="fas fa-clock text-red-500"; document.getElementById('reason-title').innerText="Gecikme Bildirimi"; document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesaiye ${frk} dk geç kaldınız. Nedeni nedir?`; }
-                    else { rI.className="fas fa-door-open text-brand-orange"; document.getElementById('reason-title').innerText="Erken Çıkış Bildirimi"; document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesai bitişine ${frk} dk kala çıkış yapıyorsunuz. Nedeni nedir?`; }
-                    document.getElementById('reason-modal').classList.remove('hidden');
+                    if(isl === "Gecikme") { 
+                        if(rI) rI.className="fas fa-clock text-red-500"; 
+                        if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Gecikme Bildirimi"; 
+                        if(document.getElementById('reason-text')) document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesaiye ${frk} dk geç kaldınız. Nedeni nedir?`; 
+                    } else { 
+                        if(rI) rI.className="fas fa-door-open text-brand-orange"; 
+                        if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Erken Çıkış Bildirimi"; 
+                        if(document.getElementById('reason-text')) document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesai bitişine ${frk} dk kala çıkış yapıyorsunuz. Nedeni nedir?`; 
+                    }
+                    document.getElementById('reason-modal')?.classList.remove('hidden');
                 } else {
                     veritabaninaYaz(aktifIslemTipi, loc, "", 0, "");
                 }
@@ -159,11 +168,11 @@ window.gpsKonumDogrula = (loc) => {
                 alert(`🚨 GÜVENLİK İHLALİ!\n\nSeçtiğiniz şubeden çok uzaktasınız.\nMevcut Mesafe: ${Math.round(dist)}m.\nİzin Verilen: ${MAKSIMUM_MESAFE_METRE}m.`);
             }
         }, () => {
-            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('loading-overlay')?.classList.add('hidden');
             alert("Konum alınamadı! Lütfen cihazınızın Konum (GPS) özelliğinin açık olduğundan emin olun.");
         }, { enableHighAccuracy: true, timeout: 10000 });
     } else {
-        document.getElementById('loading-overlay').classList.add('hidden');
+        document.getElementById('loading-overlay')?.classList.add('hidden');
         alert("Cihazınız konum algılamayı desteklemiyor.");
     }
 };
@@ -185,25 +194,25 @@ const veritabaninaYaz = async (tip, loc, islem, fark, not) => {
     } catch (e) { alert("Kayıt hatası!"); }
 };
 
-document.getElementById('reason-submit-btn').addEventListener('click', () => {
-    const r = document.getElementById('reason-input').value.trim();
-    document.getElementById('reason-modal').classList.add('hidden');
+document.getElementById('reason-submit-btn')?.addEventListener('click', () => {
+    const r = document.getElementById('reason-input')?.value.trim();
+    document.getElementById('reason-modal')?.classList.add('hidden');
     if(beklemedekiK) { veritabaninaYaz(beklemedekiK.tip, beklemedekiK.loc, beklemedekiK.islem, beklemedekiK.fark, r); beklemedekiK = null; }
 });
 
-document.getElementById('reason-skip-btn').addEventListener('click', () => {
-    document.getElementById('reason-modal').classList.add('hidden');
+document.getElementById('reason-skip-btn')?.addEventListener('click', () => {
+    document.getElementById('reason-modal')?.classList.add('hidden');
     if(beklemedekiK) { veritabaninaYaz(beklemedekiK.tip, beklemedekiK.loc, beklemedekiK.islem, beklemedekiK.fark, ""); beklemedekiK = null; }
 });
 
 // ================= RAPOR MANTIĞI =================
 window.raporVerileriniGetir = async () => {
-    const dateStr = document.getElementById('report-date-input').value;
-    const onlyLate = document.getElementById('only-late-checkbox').checked;
+    const dateStr = document.getElementById('report-date-input')?.value;
+    const onlyLate = document.getElementById('only-late-checkbox')?.checked;
     if(!dateStr) return alert("Tarih seçin!");
 
     const container = document.getElementById('reports-list-container');
-    container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-sync fa-spin mr-3 text-emerald-500"></i>Veriler Çekiliyor...</div>';
+    if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold"><i class="fas fa-sync fa-spin mr-3 text-emerald-500"></i>Veriler Çekiliyor...</div>';
 
     const formattedDate = dateStr.split('-').reverse().join('.');
 
@@ -247,89 +256,68 @@ window.raporVerileriniGetir = async () => {
                 </div>`;
             });
         }
-        container.innerHTML = html;
-    } catch(e) { container.innerHTML = '<div class="text-red-500 font-bold">Hata oluştu!</div>'; }
+        if(container) container.innerHTML = html;
+    } catch(e) { if(container) container.innerHTML = '<div class="text-red-500 font-bold">Hata oluştu!</div>'; }
 };
-
-// ================= OTURUM VE OLAY DİNLEYİCİLERİ =================
-onAuthStateChanged(auth, (u) => {
-    if (u) {
-        loginScreen.classList.remove('active');
-        const p = u.email.split('@')[0];
-        const isAdmin = ADMIN_PHONES.includes(p); 
-        
-        if(isAdmin) {
-            document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
-            adminDashboardScreen.classList.add('active'); adminVerileriniHesapla(); arayuzDurumuGuncelle(p, true);
-        } else {
-            document.getElementById('welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
-            dashboardScreen.classList.add('active'); arayuzDurumuGuncelle(p, false);
-        }
-    } else { loginScreen.classList.add('active'); [adminDashboardScreen, dashboardScreen, reportsScreen, leavesScreen, detailScreen].forEach(s => s.classList.remove('active')); }
-});
-
-document.getElementById('login-btn').onclick = () => {
-    const p = document.getElementById('phone-input').value; const s = document.getElementById('password-input').value;
-    if(!p || !s) return alert("Bilgileri girin!");
-    const b = document.getElementById('login-btn'); b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
-    signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => { b.innerHTML='Giriş Yap'; alert("Hata!"); });
-};
-
-// ================= BUTON ÇÖKME HATASI BURADA GİDERİLDİ =================
-// Ana ekrandan sildiğimiz admin-logout-btn tetikleyicisi silindi, artık kod çalışmaya devam edip alttaki butonları okuyabiliyor.
-document.getElementById('logout-btn').onclick = () => signOut(auth);
-document.getElementById('sidebar-logout-btn').onclick = () => signOut(auth);
-
-document.getElementById('btn-giris').onclick = () => islemBaslat("Giriş");
-document.getElementById('btn-cikis').onclick = () => islemBaslat("Çıkış");
-document.getElementById('admin-btn-giris').onclick = () => islemBaslat("Giriş");
-document.getElementById('admin-btn-cikis').onclick = () => islemBaslat("Çıkış");
-locationFilter.onchange = adminVerileriniHesapla;
 
 // ================= İZİN YÖNETİMİ =================
-window.izinPlanlamaAc = () => { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); document.getElementById('leave-modal').classList.remove('hidden'); const ps = document.getElementById('leave-person-select'); ps.innerHTML = ""; for(let t in personelRehberi) ps.innerHTML += `<option value="${t}">${personelRehberi[t]}</option>`; };
-window.togglePersonSelect = () => { document.getElementById('leave-person-container').classList.toggle('hidden', document.getElementById('leave-target-type').value === "Tümü"); };
-document.getElementById('save-leave-btn').onclick = async () => { 
-    const baslangic = document.getElementById('leave-start-date').value;
-    const bitis = document.getElementById('leave-end-date').value;
-    const tur = document.getElementById('leave-target-type').value;
+window.izinPlanlamaAc = () => { 
+    document.getElementById('sidebar')?.classList.add('-translate-x-full'); 
+    document.getElementById('sidebar-overlay')?.classList.add('hidden'); 
+    document.getElementById('leave-modal')?.classList.remove('hidden'); 
+    const ps = document.getElementById('leave-person-select'); 
+    if(ps) {
+        ps.innerHTML = ""; 
+        for(let t in personelRehberi) ps.innerHTML += `<option value="${t}">${personelRehberi[t]}</option>`; 
+    }
+};
+
+window.togglePersonSelect = () => { 
+    document.getElementById('leave-person-container')?.classList.toggle('hidden', document.getElementById('leave-target-type')?.value === "Tümü"); 
+};
+
+document.getElementById('save-leave-btn')?.addEventListener('click', async () => { 
+    const baslangic = document.getElementById('leave-start-date')?.value;
+    const bitis = document.getElementById('leave-end-date')?.value;
+    const tur = document.getElementById('leave-target-type')?.value;
     
     if (!baslangic || !bitis) return alert("Lütfen tarihleri seçin!");
     if (new Date(baslangic) > new Date(bitis)) return alert("Bitiş, başlangıçtan önce olamaz!");
 
-    let hedef = tur === "Kişi Seç" ? document.getElementById('leave-person-select').value : "Tümü";
+    let hedef = tur === "Kişi Seç" ? document.getElementById('leave-person-select')?.value : "Tümü";
     const btn = document.getElementById('save-leave-btn');
-    const oldText = btn.innerText; 
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    const oldText = btn ? btn.innerText : ''; 
+    if(btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     try {
         await addDoc(collection(db, "izinler"), {
             baslangic_tarihi: baslangic, bitis_tarihi: bitis, izin_hedefi: hedef, isleyen_yonetici: auth.currentUser.email.split('@')[0], olusturulma: serverTimestamp()
         });
-        btn.innerHTML = oldText; alert(`✅ İzin başarıyla oluşturuldu!`);
-        document.getElementById('leave-modal').classList.add('hidden');
-        if(leavesScreen.classList.contains('active')) window.planlananIzinleriAc(); 
-    } catch (e) { btn.innerHTML = oldText; alert("Hata: İzin kaydedilemedi."); }
-};
+        if(btn) btn.innerHTML = oldText; 
+        alert(`✅ İzin başarıyla oluşturuldu!`);
+        document.getElementById('leave-modal')?.classList.add('hidden');
+        if(leavesScreen?.classList.contains('active')) window.planlananIzinleriAc(); 
+    } catch (e) { if(btn) btn.innerHTML = oldText; alert("Hata: İzin kaydedilemedi."); }
+});
 
 window.raporEkraniAc = () => {
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-    document.getElementById('sidebar-overlay').classList.add('hidden');
-    adminDashboardScreen.classList.remove('active');
-    reportsScreen.classList.add('active');
-    document.getElementById('report-date-input').valueAsDate = new Date();
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    adminDashboardScreen?.classList.remove('active');
+    reportsScreen?.classList.add('active');
+    if(document.getElementById('report-date-input')) document.getElementById('report-date-input').valueAsDate = new Date();
     history.pushState({ ekran: 'raporlar' }, '', '#raporlar');
 };
 
 window.planlananIzinleriAc = async () => {
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-    document.getElementById('sidebar-overlay').classList.add('hidden');
-    adminDashboardScreen.classList.remove('active');
-    leavesScreen.classList.add('active');
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    adminDashboardScreen?.classList.remove('active');
+    leavesScreen?.classList.add('active');
     history.pushState({ ekran: 'izinler' }, '', '#izinler');
 
     const container = document.getElementById('leaves-list-container');
-    container.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>Yükleniyor...</div>';
+    if(container) container.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>Yükleniyor...</div>';
 
     try {
         const snap = await getDocs(query(collection(db, "izinler")));
@@ -356,20 +344,20 @@ window.planlananIzinleriAc = async () => {
                 </div>`;
             });
         }
-        container.innerHTML = html;
-    } catch(e) { container.innerHTML = `<p class="text-red-500 text-center font-bold">Veriler çekilemedi.</p>`; }
+        if(container) container.innerHTML = html;
+    } catch(e) { if(container) container.innerHTML = `<p class="text-red-500 text-center font-bold">Veriler çekilemedi.</p>`; }
 };
 
 window.detayAc = (k) => {
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-    document.getElementById('sidebar-overlay').classList.add('hidden');
-    document.getElementById('detail-title').innerText = k;
-    adminDashboardScreen.classList.remove('active');
-    detailScreen.classList.add('active');
+    document.getElementById('sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay')?.classList.add('hidden');
+    if(document.getElementById('detail-title')) document.getElementById('detail-title').innerText = k;
+    adminDashboardScreen?.classList.remove('active');
+    detailScreen?.classList.add('active');
     history.pushState({ ekran: 'detay' }, '', '#detay');
     
     const container = document.getElementById('detail-list-container');
-    const filter = locationFilter.value;
+    const filter = locationFilter?.value || "Tümü";
     let html = "";
     const bugun = new Date().toLocaleDateString('tr-TR');
     
@@ -407,5 +395,43 @@ window.detayAc = (k) => {
                     </div>`;
         }
     });
-    container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-folder-open text-3xl mb-3 opacity-50 block"></i>Kayıt bulunamadı.</div>`;
+    if(container) container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-folder-open text-3xl mb-3 opacity-50 block"></i>Kayıt bulunamadı.</div>`;
 };
+
+// ================= OTURUM VE EVENT BAĞLAMALARI =================
+onAuthStateChanged(auth, (u) => {
+    if (u) {
+        loginScreen?.classList.remove('active');
+        const p = u.email.split('@')[0];
+        const isAdmin = ADMIN_PHONES.includes(p); 
+        
+        if(isAdmin) {
+            if(document.getElementById('admin-welcome-text')) document.getElementById('admin-welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
+            adminDashboardScreen?.classList.add('active'); adminVerileriniHesapla(); arayuzDurumuGuncelle(p, true);
+        } else {
+            if(document.getElementById('welcome-text')) document.getElementById('welcome-text').innerText = `Hoş geldin, ${ismeCevir(p)}`;
+            dashboardScreen?.classList.add('active'); arayuzDurumuGuncelle(p, false);
+        }
+    } else { 
+        loginScreen?.classList.add('active'); 
+        [adminDashboardScreen, dashboardScreen, reportsScreen, leavesScreen, detailScreen].forEach(s => s?.classList.remove('active')); 
+    }
+});
+
+// Güvenli Tıklama Atamaları (Optional Chaining)
+document.getElementById('login-btn')?.addEventListener('click', () => {
+    const p = document.getElementById('phone-input')?.value; const s = document.getElementById('password-input')?.value;
+    if(!p || !s) return alert("Bilgileri girin!");
+    const b = document.getElementById('login-btn'); if(b) b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+    signInWithEmailAndPassword(auth, `${p}@ustapdks.com`, s).catch(() => { if(b) b.innerHTML='Giriş Yap'; alert("Hata!"); });
+});
+
+document.getElementById('logout-btn')?.addEventListener('click', () => signOut(auth));
+document.getElementById('sidebar-logout-btn')?.addEventListener('click', () => signOut(auth));
+
+document.getElementById('btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+document.getElementById('admin-btn-giris')?.addEventListener('click', () => islemBaslat("Giriş"));
+document.getElementById('admin-btn-cikis')?.addEventListener('click', () => islemBaslat("Çıkış"));
+
+if(locationFilter) locationFilter.addEventListener('change', adminVerileriniHesapla);
