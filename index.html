@@ -6,7 +6,6 @@
     <title>USTA PDKS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -44,13 +43,6 @@
             </button>
             <button onclick="izinPlanlamaAc()" class="w-full flex items-center gap-4 p-4 text-left font-bold text-brand-navy rounded-2xl hover:bg-slate-50 active:scale-95 transition-all">
                 <i class="fas fa-calendar-plus text-lg text-slate-400 w-6 text-center"></i> Yeni İzin Planla
-            </button>
-            
-            <div class="my-4 border-t border-slate-100"></div>
-            
-            <button class="w-full flex items-center gap-4 p-4 text-left font-medium text-slate-400 rounded-2xl cursor-default opacity-60">
-                <i class="fas fa-chart-line text-lg w-6 text-center"></i> 
-                <div><span class="block text-[10px] text-brand-orange font-bold uppercase tracking-wider">Yakında</span>Performans Analizi</div>
             </button>
         </div>
         <div class="p-6 border-t border-slate-100 bg-slate-50">
@@ -103,8 +95,8 @@
                 </div>
             </div>
             <div class="flex gap-4">
-                <button id="admin-btn-giris" class="hidden flex-1 h-16 bg-brand-orange text-white rounded-2xl shadow-lg shadow-brand-orange/20 active:scale-95 transition-all items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest"><i class="fas fa-sign-in-alt"></i> Giriş</button>
-                <button id="admin-btn-cikis" class="hidden flex-1 h-16 bg-brand-navy text-white rounded-2xl shadow-lg shadow-brand-navy/20 active:scale-95 transition-all items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest"><i class="fas fa-sign-out-alt"></i> Çıkış</button>
+                <button id="admin-btn-giris" class="hidden flex-1 h-16 bg-brand-orange text-white rounded-2xl shadow-lg shadow-brand-orange/20 active:scale-95 transition-all items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest"><i class="fas fa-map-marker-alt"></i> Giriş Yap</button>
+                <button id="admin-btn-cikis" class="hidden flex-1 h-16 bg-brand-navy text-white rounded-2xl shadow-lg shadow-brand-navy/20 active:scale-95 transition-all items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest"><i class="fas fa-map-marker-alt"></i> Çıkış Yap</button>
             </div>
         </div>
         <div class="px-6 pb-10 flex-1">
@@ -164,9 +156,7 @@
                     <button onclick="raporVerileriniGetir()" class="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">SORGULA</button>
                 </div>
             </div>
-            <div id="reports-list-container" class="space-y-4">
-                <div class="text-center py-10 text-slate-300 font-bold italic">Tarih seçip sorgulama yapın...</div>
-            </div>
+            <div id="reports-list-container" class="space-y-4"></div>
         </div>
     </div>
 
@@ -184,11 +174,22 @@
         </div>
     </div>
 
-    <div id="reason-modal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10001] justify-center items-center p-6">
+    <div id="branch-modal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10001] justify-center items-center p-6">
         <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl text-center">
-            <div class="w-24 h-24 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-slate-100">
-                <i id="reason-icon" class="fas text-5xl"></i>
+            <i class="fas fa-map-marker-alt text-5xl text-brand-navy mb-4"></i>
+            <h3 class="text-2xl font-black text-brand-navy mb-3">Konum Seçimi</h3>
+            <p class="text-sm text-slate-500 mb-6 font-medium">İşlemi gerçekleştirmek için şu an bulunduğunuz şubeyi seçiniz.</p>
+            <div class="space-y-3">
+                <button onclick="gpsKonumDogrula('Pendik Şube')" class="w-full py-4 bg-slate-100 text-brand-navy rounded-2xl font-black active:scale-95 transition-all text-sm border border-slate-200">📍 Pendik Şube</button>
+                <button onclick="gpsKonumDogrula('Atölye')" class="w-full py-4 bg-slate-100 text-brand-navy rounded-2xl font-black active:scale-95 transition-all text-sm border border-slate-200">🛠️ Atölye</button>
             </div>
+            <button onclick="document.getElementById('branch-modal').classList.add('hidden')" class="mt-6 text-slate-400 font-bold text-xs uppercase tracking-widest active:text-slate-600">İptal</button>
+        </div>
+    </div>
+
+    <div id="reason-modal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10005] justify-center items-center p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl text-center">
+            <div class="w-24 h-24 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-slate-100"><i id="reason-icon" class="fas text-5xl"></i></div>
             <h3 id="reason-title" class="text-2xl font-black text-brand-navy mb-3 tracking-tight">Bildirim</h3>
             <p id="reason-text" class="text-sm text-slate-500 mb-8 leading-relaxed font-medium px-2"></p>
             <textarea id="reason-input" placeholder="Açıklamanızı buraya yazınız..." class="w-full h-28 p-5 bg-slate-50 border border-slate-200 rounded-3xl resize-none mb-8 outline-none focus:ring-2 focus:ring-brand-orange/30 font-medium text-sm"></textarea>
@@ -212,9 +213,10 @@
         </div>
     </div>
 
-    <div id="camera-screen" class="hidden fixed inset-0 bg-black z-[9999] flex-col justify-center">
-        <button id="cancel-camera-btn" class="absolute top-12 left-8 px-6 py-3 bg-white/20 backdrop-blur-lg text-white border border-white/40 rounded-2xl font-black z-50 uppercase tracking-widest text-xs">İptal</button>
-        <div id="reader" class="w-full overflow-hidden"></div>
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[20000] flex flex-col justify-center items-center text-white">
+        <i class="fas fa-map-marker-alt text-5xl mb-4 animate-bounce text-brand-orange"></i>
+        <p class="font-bold text-lg tracking-wide">Konumunuz Doğrulanıyor...</p>
+        <p class="text-xs text-slate-300 mt-2">Lütfen bekleyiniz</p>
     </div>
 
     <script type="module" src="app.js"></script>
