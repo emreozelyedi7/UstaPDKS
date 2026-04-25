@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ================= AYARLAR VE REHBER (YENİ KİŞİLER EKLENDİ) =================
+// ================= AYARLAR VE REHBER =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
 const personelRehberi = { 
@@ -31,7 +31,8 @@ const personelRehberi = {
     "5398506894": "Hakan",
     "5453265703": "Barış",
     "5536424994": "Semra Polat",
-    "5545841092": "Can"
+    "5545841092": "Can",
+    "5521240307": "Faruk"
 };
 
 const personelSubeleri = {
@@ -46,7 +47,8 @@ const personelSubeleri = {
     "5398506894": "Atölye",
     "5453265703": "Atölye",
     "5536424994": "Pendik Şube",
-    "5545841092": "Atölye"
+    "5545841092": "Atölye",
+    "5521240307": "Atölye"
 };
 
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
