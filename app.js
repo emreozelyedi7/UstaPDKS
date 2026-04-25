@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ================= AYARLAR VE REHBER =================
+// ================= AYARLAR VE REHBER (EKSİKSİZ) =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
 const personelRehberi = { 
@@ -32,14 +32,15 @@ const personelRehberi = {
     "5453265703": "Barış",
     "5536424994": "Semra Polat",
     "5545841092": "Can",
-    "5521240307": "Faruk"
+    "5521240307": "Faruk",
+    "5433315441": "Seydi"
 };
 
 const personelSubeleri = {
     "5324328072": "Pendik Şube",
     "5419604133": "Atölye",
     "5327097461": "Pendik Şube",
-    "5304901758": "Atölye",
+    "5304901758": "Atölye", // Barış Eren Atölye
     "5445995434": "Atölye",
     "5453470226": "Pendik Şube",
     "5462825561": "Atölye",
@@ -48,7 +49,8 @@ const personelSubeleri = {
     "5453265703": "Atölye",
     "5536424994": "Pendik Şube",
     "5545841092": "Atölye",
-    "5521240307": "Atölye"
+    "5521240307": "Atölye",
+    "5433315441": "Atölye"
 };
 
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
@@ -188,12 +190,48 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     }
 };
 
-// ================= GPS VE İŞLEM MANTIĞI =================
+// ================= GPS VE İŞLEM MANTIĞI (ÖZGÜR ÇIKIŞ EKLENDİ) =================
 let beklemedekiK = null; let aktifIslemTipi = "";
 
 const islemBaslat = (tip) => { 
     aktifIslemTipi = tip; 
     document.getElementById('branch-modal')?.classList.remove('hidden'); 
+};
+
+// YENİ: Hem GPS başarılı hem başarısız olduğunda çalışacak merkezi kontrol mantığı
+const gpsZekasi = (dist, loc) => {
+    // KURAL 1: Eğer işlem "Çıkış" ise dist (mesafe) ne olursa olsun onaylanır.
+    // KURAL 2: İşlem "Giriş" ise sadece mesafe 150m altındaysa onaylanır.
+    if (aktifIslemTipi === "Çıkış" || dist <= MAKSIMUM_MESAFE_METRE) {
+        const d = new Date(); const h = d.getHours(); const m = d.getMinutes();
+        let isl = ""; let frk = 0;
+        
+        if (aktifIslemTipi === "Giriş" && (h > 9 || (h === 9 && m > 0))) { 
+            isl = "Gecikme"; frk = (h * 60 + m) - 540; 
+        } else if (aktifIslemTipi === "Çıkış" && h < 18) { 
+            isl = "Erken Cikis"; frk = 1080 - (h * 60 + m); 
+        }
+        
+        if (isl !== "") {
+            beklemedekiK = { tip: aktifIslemTipi, loc: loc, islem: isl, fark: frk };
+            if(document.getElementById('reason-input')) document.getElementById('reason-input').value = "";
+            const rI = document.getElementById('reason-icon');
+            if(isl === "Gecikme") { 
+                if(rI) rI.className="fas fa-clock text-red-500"; 
+                if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Gecikme Bildirimi"; 
+                if(document.getElementById('reason-text')) document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesaiye ${frk} dk geç kaldınız. Nedeni nedir?`; 
+            } else { 
+                if(rI) rI.className="fas fa-door-open text-brand-orange"; 
+                if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Erken Çıkış Bildirimi"; 
+                if(document.getElementById('reason-text')) document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesai bitişine ${frk} dk kala çıkış yapıyorsunuz. Nedeni nedir?`; 
+            }
+            document.getElementById('reason-modal')?.classList.remove('hidden');
+        } else {
+            veritabaninaYaz(aktifIslemTipi, loc, "", 0, "");
+        }
+    } else {
+        alert(`🚨 GÜVENLİK İHLALİ!\n\nŞubeden uzaktasınız: ${Math.round(dist)}m.\nGiriş işlemi sadece şube konumundan yapılabilir.`);
+    }
 };
 
 window.gpsKonumDogrula = (loc) => {
@@ -210,21 +248,23 @@ window.gpsKonumDogrula = (loc) => {
         navigator.geolocation.getCurrentPosition((pos) => {
             const dist = mesafeHesapla(pos.coords.latitude, pos.coords.longitude, subeKonumlari[loc].lat, subeKonumlari[loc].lng);
             document.getElementById('loading-overlay')?.classList.add('hidden');
-            if (dist <= MAKSIMUM_MESAFE_METRE) {
-                const d = new Date(); const h = d.getHours(); const m = d.getMinutes();
-                let isl = ""; let frk = 0;
-                if (aktifIslemTipi === "Giriş" && (h > 9 || (h === 9 && m > 0))) { isl = "Gecikme"; frk = (h * 60 + m) - 540; }
-                else if (aktifIslemTipi === "Çıkış" && h < 18) { isl = "Erken Cikis"; frk = 1080 - (h * 60 + m); }
-                if (isl !== "") {
-                    beklemedekiK = { tip: aktifIslemTipi, loc, islem: isl, fark: frk };
-                    if(document.getElementById('reason-input')) document.getElementById('reason-input').value = "";
-                    const rI = document.getElementById('reason-icon');
-                    if(isl === "Gecikme") { if(rI) rI.className="fas fa-clock text-red-500"; if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Gecikme Bildirimi"; if(document.getElementById('reason-text')) document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesaiye ${frk} dk geç kaldınız. Nedeni nedir?`; }
-                    else { if(rI) rI.className="fas fa-door-open text-brand-orange"; if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Erken Çıkış Bildirimi"; if(document.getElementById('reason-text')) document.getElementById('reason-text').innerText=`Sayın ${ismeCevir(auth.currentUser.email.split('@')[0])}, mesai bitişine ${frk} dk kala çıkış yapıyorsunuz. Nedeni nedir?`; }
-                    document.getElementById('reason-modal')?.classList.remove('hidden');
-                } else veritabaninaYaz(aktifIslemTipi, loc, "", 0, "");
-            } else alert(`🚨 GÜVENLİK İHLALİ!\n\nŞubeden uzaktasınız: ${Math.round(dist)}m.`);
-        }, () => { document.getElementById('loading-overlay')?.classList.add('hidden'); alert("Konum alınamadı!"); }, { enableHighAccuracy: true, timeout: 10000 });
+            gpsZekasi(dist, loc);
+        }, () => { 
+            // Kullanıcı GPS'e izin vermedi veya cihaz bulamadı
+            document.getElementById('loading-overlay')?.classList.add('hidden'); 
+            if (aktifIslemTipi === "Çıkış") {
+                gpsZekasi(0, loc); // Çıkış ise yine izin ver (0 mesafe yollayarak kandırıyoruz)
+            } else {
+                alert("Konum alınamadı! Giriş yapabilmek için cihazınızın konum (GPS) erişimine izin vermelisiniz."); 
+            }
+        }, { enableHighAccuracy: true, timeout: 10000 });
+    } else {
+        document.getElementById('loading-overlay')?.classList.add('hidden');
+        if (aktifIslemTipi === "Çıkış") {
+            gpsZekasi(0, loc);
+        } else {
+            alert("Cihazınız konum algılamayı desteklemiyor.");
+        }
     }
 };
 
