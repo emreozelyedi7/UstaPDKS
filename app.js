@@ -19,7 +19,6 @@ const db = getFirestore(app);
 // ================= AYARLAR VE REHBER =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
-// REHBER (Eksikler silindi, yeniler tam Liste)
 const personelRehberi = { 
     "5324328072": "Emre Özel İş", 
     "5327097461": "Volkan Usta",
@@ -36,7 +35,6 @@ const personelRehberi = {
     "5538876637": "Soner Güleç"
 };
 
-// ŞUBELER (Volkan Usta Çıkarıldı - Sadece Yönetici)
 const personelSubeleri = {
     "5324328072": "Pendik Şube",
     "5304901758": "Atölye", 
@@ -130,7 +128,6 @@ const adminVerileriniHesapla = async () => {
         let gelenler = new Set(); 
         
         tumHareketlerCache.forEach(v => {
-            // YENİ: Volkan Usta (5327097461) tüm analizlerden muaf!
             if(!v.tarih_saat || v.personel_tel === "5327097461") return;
             if(seciliSube !== "Tümü" && v.lokasyon !== seciliSube) return;
             const t = v.tarih_saat.toDate();
@@ -139,16 +136,24 @@ const adminVerileriniHesapla = async () => {
         
         if(document.getElementById('count-gelenler')) document.getElementById('count-gelenler').innerText = gelenler.size;
         
-        let beklenenSayi = 0; let gelenKendiSubesinde = 0;
+        // YENİ: ZAMAN DUYARLI GELMEYENLER HESAPLAMASI
+        let gelmeyenSayisi = 0;
+        const currentHour = new Date().getHours();
+
         for (let tel in personelSubeleri) {
             if (seciliSube === "Tümü" || personelSubeleri[tel] === seciliSube) {
-                beklenenSayi++;
-                if (gelenler.has(tel)) gelenKendiSubesinde++;
+                const kural = mesaiKurallari[tel] || { baslangic: 9 };
+                // Sadece mesai saati gelmiş/geçmiş ve hala giriş yapmamış kişileri say
+                if (!gelenler.has(tel) && currentHour >= kural.baslangic) {
+                    gelmeyenSayisi++;
+                }
             }
         }
-        if(document.getElementById('count-gelmeyenler')) document.getElementById('count-gelmeyenler').innerText = Math.max(0, beklenenSayi - gelenKendiSubesinde);
+        
+        if(document.getElementById('count-gelmeyenler')) {
+            document.getElementById('count-gelmeyenler').innerText = gelmeyenSayisi;
+        }
 
-        // Geç Kalan Sayacı (Özel Kurallara Göre)
         let gecKalanlarBugun = 0;
         tumHareketlerCache.forEach(v => {
             if(!v.tarih_saat || v.islem_tipi !== "Giriş" || v.personel_tel === "5327097461") return;
@@ -181,7 +186,6 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     const badge = document.getElementById(`${pref}status-badge`);
     
     if (bG && bC && badge) {
-        // YENİ: Volkan Usta Butonları Gizli (Sadece Yönetici)
         if (phone === "5327097461") {
             bG.style.display = "none";
             bC.style.display = "none";
@@ -206,7 +210,6 @@ const gpsZekasi = (dist, loc) => {
     const userPhone = auth.currentUser?.email.split('@')[0];
     const kural = mesaiKurallari[userPhone] || { baslangic: 9, bitis: 18 };
 
-    // KURAL: Giriş ise konum şart, Çıkış ise konum farketmez
     if (aktifIslemTipi === "Çıkış" || dist <= MAKSIMUM_MESAFE_METRE) {
         const d = new Date(); const h = d.getHours(); const m = d.getMinutes();
         let isl = ""; let frk = 0;
@@ -262,7 +265,7 @@ const veritabaninaYaz = async (tip, loc, islem, fark, not) => {
         const isAdmin = ADMIN_PHONES.includes(p);
         if(isAdmin) { arayuzDurumuGuncelle(p, true); adminVerileriniHesapla(); } 
         else arayuzDurumuGuncelle(p, false);
-    } catch (e) { alert("Hata!"); }
+    } catch (e) { alert("Kayıt hatası!"); }
 };
 
 document.getElementById('reason-submit-btn')?.addEventListener('click', () => {
@@ -292,7 +295,7 @@ window.raporVerileriniGetir = async () => {
         let gruplanmis = {}; sonFiltrelenmisRapor = []; 
         snap.forEach(doc => {
             const d = doc.data(); 
-            if(!d.tarih_saat || d.personel_tel === "5327097461") return; // Volkan Usta Muaf!
+            if(!d.tarih_saat || d.personel_tel === "5327097461") return; 
             
             const docD = d.tarih_saat.toDate();
             if(docD >= startD && docD <= endD) {
@@ -340,7 +343,7 @@ window.excelIndir = () => {
     XLSX.writeFile(workbook, `PDKS_Rapor.xlsx`);
 };
 
-// ================= AKILLI ANALİZLER (VOLKAN USTA MUAF) =================
+// ================= AKILLI ANALİZLER (ZAMAN DUYARLI) =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -352,16 +355,37 @@ window.detayAc = (k) => {
     let html = ""; const bugun = new Date().toLocaleDateString('tr-TR');
     
     if (k === 'Bugün Gelmeyenler') {
-        let gelenlerSet = new Set();
+        let gelenlerBugun = new Set();
         tumHareketlerCache.forEach(v => {
-            if(v.tarih_saat && v.tarih_saat.toDate().toLocaleDateString('tr-TR') === bugun && v.islem_tipi === "Giriş") gelenlerSet.add(v.personel_tel);
+            if(!v.tarih_saat) return;
+            const tStr = v.tarih_saat.toDate().toLocaleDateString('tr-TR');
+            if(tStr === bugun && v.islem_tipi === "Giriş") {
+                gelenlerBugun.add(v.personel_tel);
+            }
         });
+
         let gelmeyenler = [];
-        for (let tel in personelSubeleri) { // Volkan Usta personelSubeleri'nde yok, gelmedi de sayılmaz!
-            if ((filter === "Tümü" || filter === personelSubeleri[tel]) && !gelenlerSet.has(tel)) gelmeyenler.push(tel);
+        const currentHour = new Date().getHours();
+
+        for (let tel in personelSubeleri) {
+            const atanmisSube = personelSubeleri[tel];
+            const kural = mesaiKurallari[tel] || { baslangic: 9 };
+
+            if (filter === "Tümü" || filter === atanmisSube) {
+                // YENİ: Sadece mesai saati gelmiş ve giriş yapmamış olanları listele
+                if (!gelenlerBugun.has(tel) && currentHour >= kural.baslangic) {
+                    gelmeyenler.push(tel);
+                }
+            }
         }
-        if (gelmeyenler.length === 0) html = `<div class="text-center py-12"><i class="fas fa-check-circle text-5xl text-emerald-400 mb-4 block"></i><p class="font-bold text-brand-navy">Herkes tam kadro çalışıyor!</p></div>`;
-        else gelmeyenler.forEach(tel => { html += `<div class="p-5 bg-white rounded-2xl shadow-sm border-l-4 border-slate-300 mb-3"><div class="flex justify-between items-start mb-2"><div><h4 class="font-bold text-brand-navy text-sm">${ismeCevir(tel)}</h4><span class="text-[10px] text-slate-400 font-bold uppercase">${personelSubeleri[tel]}</span></div><span class="text-[10px] font-black px-2 py-1 rounded bg-red-50 text-red-500 uppercase border border-red-100">GELMEDİ</span></div></div>`; });
+
+        if (gelmeyenler.length === 0) {
+            html = `<div class="text-center py-12"><i class="fas fa-check-circle text-5xl text-emerald-400 mb-4 block"></i><p class="font-bold text-brand-navy">Şu an için eksik personel bulunmuyor.</p></div>`;
+        } else {
+            gelmeyenler.forEach(tel => { 
+                html += `<div class="p-5 bg-white rounded-2xl shadow-sm border-l-4 border-slate-300 mb-3"><div class="flex justify-between items-start mb-2"><div><h4 class="font-bold text-brand-navy text-sm">${ismeCevir(tel)}</h4><span class="text-[10px] text-slate-400 font-bold uppercase">${personelSubeleri[tel]}</span></div><span class="text-[10px] font-black px-2 py-1 rounded bg-red-50 text-red-500 uppercase border border-red-100">GELMEDİ</span></div></div>`; 
+            });
+        }
         if(container) container.innerHTML = html; return;
     }
 
