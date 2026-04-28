@@ -19,14 +19,13 @@ const db = getFirestore(app);
 // ================= AYARLAR VE REHBER =================
 const ADMIN_PHONES = ["5324328072", "5327097461"]; 
 
+// REHBER (Eksikler silindi, yeniler tam Liste)
 const personelRehberi = { 
     "5324328072": "Emre Özel İş", 
-    "5419604133": "Emre Özel",
     "5327097461": "Volkan Usta",
     "5304901758": "Barış Eren",
     "5445995434": "Burak Albayrak",
     "5453470226": "Cem Arslan",
-    "5462825561": "Ferhat",
     "5303835099": "Okan",
     "5398506894": "Hakan",
     "5453265703": "Barış",
@@ -37,14 +36,12 @@ const personelRehberi = {
     "5538876637": "Soner Güleç"
 };
 
+// ŞUBELER (Volkan Usta Çıkarıldı - Sadece Yönetici)
 const personelSubeleri = {
     "5324328072": "Pendik Şube",
-    "5419604133": "Atölye",
-    "5327097461": "Pendik Şube",
-    "5304901758": "Atölye",
+    "5304901758": "Atölye", 
     "5445995434": "Atölye",
     "5453470226": "Pendik Şube",
-    "5462825561": "Atölye",
     "5303835099": "Atölye",
     "5398506894": "Atölye",
     "5453265703": "Atölye",
@@ -55,9 +52,9 @@ const personelSubeleri = {
     "5538876637": "Pendik Şube"
 };
 
-// YENİ: ÖZEL ÇALIŞMA SAATLERİ (Varsayılan 09:00 - 18:00)
+// ÖZEL ÇALIŞMA SAATLERİ (Varsayılan 09:00 - 18:00)
 const mesaiKurallari = {
-    "5538876637": { baslangic: 12, bitis: 18 } // Soner için 12:00 - 18:00
+    "5538876637": { baslangic: 12, bitis: 18 } // Soner Güleç için
 };
 
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
@@ -130,10 +127,11 @@ const adminVerileriniHesapla = async () => {
         querySnapshot.forEach(doc => tumHareketlerCache.push(doc.data()));
         const bugun = new Date().toLocaleDateString('tr-TR');
         const seciliSube = locationFilter?.value || "Tümü";
-        let gelenler = new Set();
+        let gelenler = new Set(); 
         
         tumHareketlerCache.forEach(v => {
-            if(!v.tarih_saat) return;
+            // YENİ: Volkan Usta (5327097461) tüm analizlerden muaf!
+            if(!v.tarih_saat || v.personel_tel === "5327097461") return;
             if(seciliSube !== "Tümü" && v.lokasyon !== seciliSube) return;
             const t = v.tarih_saat.toDate();
             if(t.toLocaleDateString('tr-TR') === bugun && v.islem_tipi === "Giriş") gelenler.add(v.personel_tel);
@@ -153,7 +151,7 @@ const adminVerileriniHesapla = async () => {
         // Geç Kalan Sayacı (Özel Kurallara Göre)
         let gecKalanlarBugun = 0;
         tumHareketlerCache.forEach(v => {
-            if(!v.tarih_saat || v.islem_tipi !== "Giriş") return;
+            if(!v.tarih_saat || v.islem_tipi !== "Giriş" || v.personel_tel === "5327097461") return;
             const t = v.tarih_saat.toDate();
             if(t.toLocaleDateString('tr-TR') === bugun) {
                 const kural = mesaiKurallari[v.personel_tel] || { baslangic: 9 };
@@ -181,9 +179,18 @@ const arayuzDurumuGuncelle = async (phone, isAdmin) => {
     const bG = document.getElementById(`${pref}btn-giris`);
     const bC = document.getElementById(`${pref}btn-cikis`);
     const badge = document.getElementById(`${pref}status-badge`);
+    
     if (bG && bC && badge) {
-        if(son === "Giriş") { bG.style.display="none"; bC.style.display="flex"; badge.innerText="MESAİDE"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-widest"; }
-        else { bG.style.display="flex"; bC.style.display="none"; badge.innerText="MESAİ DIŞI"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-600 border border-red-200 uppercase tracking-widest"; }
+        // YENİ: Volkan Usta Butonları Gizli (Sadece Yönetici)
+        if (phone === "5327097461") {
+            bG.style.display = "none";
+            bC.style.display = "none";
+            badge.innerText = "YÖNETİCİ MODU"; 
+            badge.className = "inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500 uppercase tracking-widest";
+        } else {
+            if(son === "Giriş") { bG.style.display="none"; bC.style.display="flex"; badge.innerText="MESAİDE"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-widest"; }
+            else { bG.style.display="flex"; bC.style.display="none"; badge.innerText="MESAİ DIŞI"; badge.className="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-600 border border-red-200 uppercase tracking-widest"; }
+        }
     }
 };
 
@@ -195,6 +202,33 @@ const islemBaslat = (tip) => {
     document.getElementById('branch-modal')?.classList.remove('hidden'); 
 };
 
+const gpsZekasi = (dist, loc) => {
+    const userPhone = auth.currentUser?.email.split('@')[0];
+    const kural = mesaiKurallari[userPhone] || { baslangic: 9, bitis: 18 };
+
+    // KURAL: Giriş ise konum şart, Çıkış ise konum farketmez
+    if (aktifIslemTipi === "Çıkış" || dist <= MAKSIMUM_MESAFE_METRE) {
+        const d = new Date(); const h = d.getHours(); const m = d.getMinutes();
+        let isl = ""; let frk = 0;
+        
+        if (aktifIslemTipi === "Giriş" && (h > kural.baslangic || (h === kural.baslangic && m > 0))) { 
+            isl = "Gecikme"; frk = (h * 60 + m) - (kural.baslangic * 60); 
+        } else if (aktifIslemTipi === "Çıkış" && h < kural.bitis) { 
+            isl = "Erken Cikis"; frk = (kural.bitis * 60) - (h * 60 + m); 
+        }
+        
+        if (isl !== "") {
+            beklemedekiK = { tip: aktifIslemTipi, loc, islem: isl, fark: frk };
+            if(document.getElementById('reason-input')) document.getElementById('reason-input').value = "";
+            const rI = document.getElementById('reason-icon');
+            if(isl === "Gecikme") { if(rI) rI.className="fas fa-clock text-red-500"; if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Gecikme Bildirimi"; }
+            else { if(rI) rI.className="fas fa-door-open text-brand-orange"; if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Erken Çıkış Bildirimi"; }
+            document.getElementById('reason-text').innerText = `Sayın ${ismeCevir(userPhone)}, mesai saatiniz dışında işlem yapıyorsunuz (${frk} dk fark). Lütfen nedenini belirtin.`;
+            document.getElementById('reason-modal')?.classList.remove('hidden');
+        } else veritabaninaYaz(aktifIslemTipi, loc, "", 0, "");
+    } else alert(`🚨 GÜVENLİK İHLALİ!\n\nŞubeden uzaktasınız (${Math.round(dist)}m).\nGiriş işlemi sadece şube konumundan yapılabilir.`);
+};
+
 window.gpsKonumDogrula = (loc) => {
     document.getElementById('branch-modal')?.classList.add('hidden');
     const overlay = document.getElementById('loading-overlay');
@@ -204,36 +238,16 @@ window.gpsKonumDogrula = (loc) => {
         navigator.geolocation.getCurrentPosition((pos) => {
             const dist = mesafeHesapla(pos.coords.latitude, pos.coords.longitude, subeKonumlari[loc].lat, subeKonumlari[loc].lng);
             document.getElementById('loading-overlay')?.classList.add('hidden');
-            
-            const userPhone = auth.currentUser?.email.split('@')[0];
-            const kural = mesaiKurallari[userPhone] || { baslangic: 9, bitis: 18 };
-
-            // KURAL: Giriş ise konum şart, Çıkış ise konum farketmez
-            if (aktifIslemTipi === "Çıkış" || dist <= MAKSIMUM_MESAFE_METRE) {
-                const d = new Date(); const h = d.getHours(); const m = d.getMinutes();
-                let isl = ""; let frk = 0;
-                
-                if (aktifIslemTipi === "Giriş" && (h > kural.baslangic || (h === kural.baslangic && m > 0))) { 
-                    isl = "Gecikme"; frk = (h * 60 + m) - (kural.baslangic * 60); 
-                } else if (aktifIslemTipi === "Çıkış" && h < kural.bitis) { 
-                    isl = "Erken Cikis"; frk = (kural.bitis * 60) - (h * 60 + m); 
-                }
-                
-                if (isl !== "") {
-                    beklemedekiK = { tip: aktifIslemTipi, loc, islem: isl, fark: frk };
-                    if(document.getElementById('reason-input')) document.getElementById('reason-input').value = "";
-                    const rI = document.getElementById('reason-icon');
-                    if(isl === "Gecikme") { if(rI) rI.className="fas fa-clock text-red-500"; if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Gecikme Bildirimi"; }
-                    else { if(rI) rI.className="fas fa-door-open text-brand-orange"; if(document.getElementById('reason-title')) document.getElementById('reason-title').innerText="Erken Çıkış Bildirimi"; }
-                    document.getElementById('reason-text').innerText = `Sayın ${ismeCevir(userPhone)}, mesai saatiniz dışında işlem yapıyorsunuz (${frk} dk fark). Lütfen nedenini belirtin.`;
-                    document.getElementById('reason-modal')?.classList.remove('hidden');
-                } else veritabaninaYaz(aktifIslemTipi, loc, "", 0, "");
-            } else alert(`🚨 GÜVENLİK İHLALİ!\n\nŞubeden uzaktasınız (${Math.round(dist)}m).\nGiriş işlemi sadece şube konumundan yapılabilir.`);
+            gpsZekasi(dist, loc);
         }, () => { 
             document.getElementById('loading-overlay')?.classList.add('hidden'); 
-            if (aktifIslemTipi === "Çıkış") veritabaninaYaz("Çıkış", loc, "", 0, ""); 
-            else alert("Konum alınamadı! Giriş için GPS gereklidir.");
+            if (aktifIslemTipi === "Çıkış") gpsZekasi(0, loc); 
+            else alert("Konum alınamadı! Giriş için GPS izni gereklidir.");
         }, { enableHighAccuracy: true, timeout: 10000 });
+    } else {
+        document.getElementById('loading-overlay')?.classList.add('hidden');
+        if (aktifIslemTipi === "Çıkış") gpsZekasi(0, loc);
+        else alert("Cihazınız konum algılamayı desteklemiyor.");
     }
 };
 
@@ -277,7 +291,9 @@ window.raporVerileriniGetir = async () => {
         const snap = await getDocs(collection(db, "hareketler"));
         let gruplanmis = {}; sonFiltrelenmisRapor = []; 
         snap.forEach(doc => {
-            const d = doc.data(); if(!d.tarih_saat) return;
+            const d = doc.data(); 
+            if(!d.tarih_saat || d.personel_tel === "5327097461") return; // Volkan Usta Muaf!
+            
             const docD = d.tarih_saat.toDate();
             if(docD >= startD && docD <= endD) {
                 if(onlyLate && (d.durum_etiketi !== "Geç Kaldı" && d.durum_etiketi !== "Erken Çıktı")) return;
@@ -324,7 +340,7 @@ window.excelIndir = () => {
     XLSX.writeFile(workbook, `PDKS_Rapor.xlsx`);
 };
 
-// ================= AKILLI ANALİZLER =================
+// ================= AKILLI ANALİZLER (VOLKAN USTA MUAF) =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -341,7 +357,7 @@ window.detayAc = (k) => {
             if(v.tarih_saat && v.tarih_saat.toDate().toLocaleDateString('tr-TR') === bugun && v.islem_tipi === "Giriş") gelenlerSet.add(v.personel_tel);
         });
         let gelmeyenler = [];
-        for (let tel in personelSubeleri) {
+        for (let tel in personelSubeleri) { // Volkan Usta personelSubeleri'nde yok, gelmedi de sayılmaz!
             if ((filter === "Tümü" || filter === personelSubeleri[tel]) && !gelenlerSet.has(tel)) gelmeyenler.push(tel);
         }
         if (gelmeyenler.length === 0) html = `<div class="text-center py-12"><i class="fas fa-check-circle text-5xl text-emerald-400 mb-4 block"></i><p class="font-bold text-brand-navy">Herkes tam kadro çalışıyor!</p></div>`;
@@ -351,7 +367,7 @@ window.detayAc = (k) => {
 
     tumHareketlerCache.sort((a,b) => b.tarih_saat?.toMillis() - a.tarih_saat?.toMillis());
     tumHareketlerCache.forEach(v => {
-        if(!v.tarih_saat || v.tarih_saat.toDate().toLocaleDateString('tr-TR') !== bugun) return;
+        if(!v.tarih_saat || v.tarih_saat.toDate().toLocaleDateString('tr-TR') !== bugun || v.personel_tel === "5327097461") return;
         if(filter !== "Tümü" && v.lokasyon !== filter) return;
         if(k === "Geç Kalanlar") {
             const kural = mesaiKurallari[v.personel_tel] || { baslangic: 9 };
