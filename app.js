@@ -57,7 +57,6 @@ const mesaiKurallari = {
 
 const ismeCevir = (tel) => personelRehberi[tel] || tel;
 
-// YENİ: ATÖLYE KONUMU GÜNCELLENDİ (40°53'31.8"N 29°15'32.9"E)
 const subeKonumlari = {
     "Pendik Şube": { lat: 40.899520532909584, lng: 29.258524165071616 }, 
     "Atölye": { lat: 40.892167, lng: 29.259139 }      
@@ -342,7 +341,7 @@ window.excelIndir = () => {
     XLSX.writeFile(workbook, `PDKS_Rapor.xlsx`);
 };
 
-// ================= AKILLI ANALİZLER (VOLKAN USTA MUAF) =================
+// ================= AKILLI ANALİZLER VE AÇIKLAMALAR EKLENDİ =================
 window.detayAc = (k) => {
     document.getElementById('sidebar')?.classList.add('-translate-x-full');
     document.getElementById('sidebar-overlay')?.classList.add('hidden');
@@ -382,10 +381,35 @@ window.detayAc = (k) => {
             const t = v.tarih_saat.toDate();
             if(!(t.getHours() > kural.baslangic || (t.getHours() === kural.baslangic && t.getMinutes() > 0)) || v.islem_tipi !== "Giriş") return;
         }
+        
         const saat = v.tarih_saat.toDate().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
-        html += `<div class="p-5 bg-white rounded-2xl shadow-sm border-l-4 border-slate-200 mb-3"><div class="flex justify-between items-start mb-2"><div><h4 class="font-bold text-brand-navy text-xs">${ismeCevir(v.personel_tel)}</h4><span class="text-[9px] text-slate-400 uppercase font-bold">${v.lokasyon}</span></div><span class="text-[9px] font-black px-2 py-1 rounded bg-slate-50 uppercase">${v.islem_tipi}</span></div><div class="font-black text-slate-800 text-xs"><i class="far fa-clock mr-2 text-slate-400"></i>${saat}</div></div>`;
+        
+        // --- EKSİK OLAN RENKLENDİRME VE AÇIKLAMA YAZISI GERİ GETİRİLDİ ---
+        let durumYazisi = "Zamanında"; let txtColor = "text-emerald-600"; let borderColor = "border-emerald-500";
+        let isLate = v.durum_etiketi === "Geç Kaldı"; let isEarly = v.durum_etiketi === "Erken Çıktı";
+        
+        if (isLate) { durumYazisi = "Geç Kaldı"; txtColor = "text-red-500"; borderColor = "border-red-500"; }
+        if (isEarly) { durumYazisi = "Erken Çıktı"; txtColor = "text-orange-500"; borderColor = "border-orange-500"; }
+
+        let nedenHtml = "";
+        if ((isLate || isEarly) && v.islem_notu) {
+            let bgRenk = isLate ? "bg-red-50" : "bg-orange-50";
+            nedenHtml = `<div class="mt-3 p-3 rounded-xl border-l-2 ${borderColor} ${bgRenk} text-xs text-slate-600 font-medium"><strong class="text-slate-800">Açıklama:</strong> ${v.islem_notu}</div>`;
+        }
+
+        html += `<div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 ${borderColor} relative overflow-hidden mb-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <div><h4 class="font-bold text-brand-navy text-base leading-tight">${ismeCevir(v.personel_tel)}</h4><span class="text-xs text-slate-400 font-medium">${v.lokasyon}</span></div>
+                        <span class="font-bold text-sm ${txtColor}">${durumYazisi}</span>
+                    </div>
+                    <div class="flex justify-between items-end mt-1">
+                        <div class="text-[11px] text-slate-400 font-medium">Tel: ${v.personel_tel}</div>
+                        <div class="px-2 py-1 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100">${v.islem_tipi} <i class="fas fa-chevron-right text-[8px] mx-1 text-slate-400"></i> ${saat}</div>
+                    </div>
+                    ${nedenHtml}
+                </div>`;
     });
-    if(container) container.innerHTML = html || `<p class="text-center py-10 text-slate-400 italic">Kayıt bulunamadı.</p>`;
+    if(container) container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-medium"><i class="fas fa-folder-open text-3xl mb-3 opacity-50 block"></i>Kayıt bulunamadı.</div>`;
 };
 
 // ================= DİĞER FONKSİYONLAR =================
